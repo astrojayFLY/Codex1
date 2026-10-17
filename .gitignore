@@ -1,0 +1,8 @@
+.deployment-tools/
+.pnpm-store/
+.validation-deps/
+.firebase/
+firebase-debug*.log
+firestore-debug*.log
+ui-debug*.log
+pages-dist/
