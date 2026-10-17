@@ -2,11 +2,10 @@ import DiaryPage from './DiaryPage';
 import DrawPage from './DrawPage';
 import { Component, useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react';
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
-import type { Session } from '@supabase/supabase-js';
 import { contentApproved, validateVirtues, virtues } from './data/virtues';
 import { dailyIndex, otherIndex, prettyDate, seoulDate } from './lib/daily';
 import { cleanProgram, validateProgram, validUrl, type Program, type ProgramInput, type FieldErrors } from './lib/programs';
-import { configured, deleteProgram, friendlyError, loadPrograms, saveProgram, supabase } from './lib/backend';
+import { configured, deleteProgram, friendlyError, watchPrograms, saveProgram, loginGoogle, logoutGoogle, useAccount, watchAdmin } from './lib/firebase-backend';
 
 function Rainbow({ large = false }: { large?: boolean }) {
   return <svg className={large ? 'rainbow-art' : 'rainbow-mark'} viewBox="0 0 300 210" fill="none" aria-hidden="true">
@@ -23,7 +22,7 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) { return <span aria
 function RainbowTile() { return <span className="rainbow-tile"><Rainbow /></span>; }
 function Header() {
   return <header className="site-header"><Link className="brand" to="/" aria-label="무지개 교실 홈"><RainbowTile /><span>무지개 교실<span className="brand-sub">우리의 하루를, 더 다정하게</span></span></Link>
-    <nav aria-label="주 메뉴"><NavLink to="/" end>프로그램</NavLink><NavLink to="/virtue">오늘의 미덕</NavLink><NavLink className="nav-admin" to="/admin" aria-label="선생님 공간"><span className="nav-admin-label">선생님 공간</span><span aria-hidden="true"> ↗</span></NavLink></nav></header>;
+    <nav aria-label="주 메뉴"><a href="https://astrojayfly.github.io/Codex1/">교실 도구 허브</a><NavLink to="/" end>프로그램</NavLink><NavLink to="/virtue">오늘의 미덕</NavLink><NavLink className="nav-admin" to="/admin" aria-label="선생님 공간"><span className="nav-admin-label">선생님 공간</span><span aria-hidden="true"> ↗</span></NavLink></nav></header>;
 }
 function Footer() { return <footer className="site-footer"><Link to="/" className="footer-brand"><Rainbow /> 무지개 교실</Link><p>작은 도구로 만드는, 더 따뜻한 교실.</p><span>함께 배우고, 함께 자라요.</span></footer>; }
 function useDaily() {
@@ -37,16 +36,11 @@ function useDaily() {
   return date;
 }
 function usePrograms() {
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [version, setVersion] = useState(0);
-  useEffect(() => {
-    let active = true;
-    setStatus('loading');
-    loadPrograms().then(items => { if (active) { setPrograms(items); setStatus('ready'); } }).catch(() => { if (active) setStatus('error'); });
-    return () => { active = false; };
-  }, [version]);
-  return { programs, status, reload: () => setVersion(v => v + 1) };
+  const [programs,setPrograms]=useState<Program[]>([]);
+  const [status,setStatus]=useState<'loading'|'ready'|'error'>('loading');
+  const [version,setVersion]=useState(0);
+  useEffect(()=>{setStatus('loading');return watchPrograms(items=>{setPrograms(items);setStatus('ready');},()=>setStatus('error'));},[version]);
+  return {programs,status,reload:()=>setVersion(v=>v+1)};
 }
 function Home() {
   const date = useDaily();
@@ -56,11 +50,11 @@ function Home() {
     <section className="hero" aria-labelledby="hero-heading"><div className="hero-copy"><p className="eyebrow"><span className="tiny-spark" aria-hidden="true">✦</span> 선생님의 아이디어가 모이는 곳</p><h1 id="hero-heading">우리 교실의 하루에<br /><span>작은 무지개를.</span></h1><p className="hero-description">배움에 즐거움을, 마음에 따뜻함을.<br />수업에 필요한 작은 도구들을 한곳에서 만나 보세요.</p><Link className="button primary hero-cta" to="/virtue">오늘의 미덕 만나기 <RainbowTile /></Link><div className="hero-note"><span className="dot"/> 로그인 없이, 바로 함께할 수 있어요.</div></div>
       <div className="hero-visual" aria-hidden="true"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><span className="spark spark-one">✦</span><span className="spark spark-two">✧</span><div className="rainbow-float"><Rainbow large /></div><div className="floating-label label-one">마음이 자라는 시간 <span>♡</span></div><div className="floating-label label-two"><span className="dot"/> 오늘도, 함께 한 뼘</div><span className="visual-caption">A LITTLE KINDNESS, EVERY DAY</span></div>
     </section>
-    <section className="program-section" id="programs" aria-labelledby="program-heading"><div className="section-heading"><div><p className="eyebrow">OUR CLASSROOM TOOLS</p><h2 id="program-heading">우리 교실 프로그램<span className="count">{programs.length + 4}</span></h2></div><p>필요한 순간, 가볍게 꺼내 쓰세요.</p></div>
+    <section className="program-section" id="programs" aria-labelledby="program-heading"><div className="section-heading"><div><p className="eyebrow">OUR CLASSROOM TOOLS</p><h2 id="program-heading">우리 교실 프로그램<span className="count">{programs.length + 5}</span></h2></div><p>필요한 순간, 가볍게 꺼내 쓰세요.</p></div>
       <div className="program-grid"><article className="featured-program"><div className="card-top"><span className="category">마음 성장</span><span className="card-number">01</span></div><div className="mini-scene" aria-hidden="true"><span className="scene-star">✦</span><Rainbow /><span className="scene-heart">♡</span><span className="scene-pill">오늘은 ‘{today.name}’</span></div><div className="program-body"><h3>오늘의 미덕</h3><p>하루 한 가지 미덕으로<br />마음이 자라는 교실을 만들어요.</p><Link className="card-action" to="/virtue">함께 시작하기 <span className="round-arrow"><Arrow /></span></Link></div></article>
         <article className="external-program tint-0"><div className="card-top"><span className="category">문서 도구 · 로컬 처리</span><span className="card-number">02</span></div><div className="external-symbol" aria-hidden="true">Aa</div><div className="program-body"><h3>PDF 글자 수</h3><p>공백 포함·제외 글자 수를 바로 확인해요. 파일과 결과는 내 기기에서만 처리해요.</p><a className="card-action" href="/pdf-counter/index.html">PDF 선택하기 <span className="round-arrow"><Arrow /></span></a></div></article>
         <article className="external-program tint-1"><div className="card-top"><span className="category">학급 운영 · 랜덤 뽑기</span><span className="card-number">03</span></div><div className="external-symbol" aria-hidden="true">✦</div><div className="program-body"><h3>빠른 뽑기</h3><p>1초 룰렛과 카드로 다음 주인공을 뽑아요. 명단 설정과 중복 제외도 간편하게.</p><Link className="card-action" to="/draw">바로 뽑기 <span className="round-arrow"><Arrow /></span></Link></div></article>
-        <article className="external-program tint-2"><div className="card-top"><span className="category">마음 기록 · 로컬 저장</span><span className="card-number">04</span></div><div className="external-symbol" aria-hidden="true">✎</div><div className="program-body"><h3>나의 하루 · 일기장</h3><p>오늘의 기분과 소중한 순간을 기록해요. 일기는 내 컴퓨터 폴더에 보관해요.</p><Link className="card-action" to="/diary">일기 쓰러 가기 <span className="round-arrow"><Arrow /></span></Link></div></article>{programs.map((program, i) => <article className={`external-program tint-${i % 3}`} key={program.id}><div className="card-top"><span className="category">교실 도구</span><span className="card-number">{String(i + 5).padStart(2, '0')}</span></div><div className="external-symbol" aria-hidden="true">{['✳', '✦', '✿'][i % 3]}</div><div className="program-body"><h3>{program.title}</h3><p>{program.description}</p>{validUrl(program.url) ? <a className="card-action" href={program.url} target="_blank" rel="noopener noreferrer" aria-label={`${program.title} 새 탭에서 열기`}>프로그램 열기 <span className="round-arrow"><Arrow /></span></a> : <p className="error-text">주소를 확인 중이에요.</p>}</div></article>)}
+        <article className="external-program tint-2"><div className="card-top"><span className="category">마음 기록 · 나만의 클라우드</span><span className="card-number">04</span></div><div className="external-symbol" aria-hidden="true">✎</div><div className="program-body"><h3>나의 하루 · 일기장</h3><p>오늘의 기분과 소중한 순간을 기록해요. Google 계정으로 로그인하면 나만 볼 수 있게 저장해요.</p><Link className="card-action" to="/diary">일기 쓰러 가기 <span className="round-arrow"><Arrow /></span></Link></div></article><article className="external-program tint-0"><div className="card-top"><span className="category">초등 2학년 · 수학 놀이</span><span className="card-number">05</span></div><div className="external-symbol" aria-hidden="true">2 + 3</div><div className="program-body"><h3>무지개 수학</h3><p>수와 연산, 구구단, 시각과 길이까지 즐거운 게임으로 함께 배워요.</p><a className="card-action" href="https://astrojayfly.github.io/Codex1/math-play/">수학 놀이 시작 <span className="round-arrow"><Arrow /></span></a></div></article>{programs.map((program, i) => <article className={`external-program tint-${i % 3}`} key={program.id}><div className="card-top"><span className="category">교실 도구</span><span className="card-number">{String(i + 6).padStart(2, '0')}</span></div><div className="external-symbol" aria-hidden="true">{['✳', '✦', '✿'][i % 3]}</div><div className="program-body"><h3>{program.title}</h3><p>{program.description}</p>{validUrl(program.url) ? <a className="card-action" href={program.url} target="_blank" rel="noopener noreferrer" aria-label={`${program.title} 새 탭에서 열기`}>프로그램 열기 <span className="round-arrow"><Arrow /></span></a> : <p className="error-text">주소를 확인 중이에요.</p>}</div></article>)}
         {programs.length === 0 && status !== 'loading' && <div className="coming-card"><div className="outlined-plus" aria-hidden="true">+</div><h3>다음 아이디어가 <br />자랄 자리</h3><p>우리 교실에 필요한 도구들이<br />하나씩 더해질 거예요.</p><span className="coming-label">차근차근 준비하고 있어요</span></div>}
       </div>
       {status === 'loading' && <p role="status" className="inline-note">프로그램 목록을 불러오고 있어요…</p>}
@@ -97,28 +91,14 @@ function VirtuePage() {
   </main>;
 }
 function useAdmin() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [authLoading, setAuthLoading] = useState(!!supabase);
-  const [role, setRole] = useState<'checking' | 'admin' | 'visitor' | 'error'>('checking');
-  const [retry, setRetry] = useState(0);
-  useEffect(() => {
-    if (!supabase) { setAuthLoading(false); return; }
-    let live = true;
-    supabase.auth.getSession().then(({ data, error }) => { if (live) { setSession(data.session); setAuthLoading(false); if (error) setRole('error'); } }).catch(() => { if (live) { setAuthLoading(false); setRole('error'); } });
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => { if (live) { setSession(next); setAuthLoading(false); } });
-    return () => { live = false; data.subscription.unsubscribe(); };
-  }, []);
-  useEffect(() => {
-    let live = true;
-    if (!supabase || !session) { setRole('visitor'); return; }
-    setRole('checking');
-    supabase.from('admin_users').select('user_id').eq('user_id', session.user.id).abortSignal(AbortSignal.timeout(12000)).maybeSingle().then(({ data, error }) => { if (live) setRole(error ? 'error' : data ? 'admin' : 'visitor'); });
-    return () => { live = false; };
-  }, [session, retry]);
-  return { session, authLoading, role, retry: () => setRetry(v => v + 1) };
+  const account=useAccount();
+  const [role,setRole]=useState<'checking'|'admin'|'visitor'|'error'>('checking');
+  const [retry,setRetry]=useState(0);
+  useEffect(()=>{if(!account.user){setRole('visitor');return;}setRole('checking');return watchAdmin(account.user.uid,allowed=>setRole(allowed?'admin':'visitor'),()=>setRole('error'));},[account.user?.uid,retry]);
+  return {user:account.user,authLoading:account.loading,role,retry:()=>setRetry(v=>v+1)};
 }
 function SetupNotice() {
-  return <div className="setup-panel"><span className="setup-symbol" aria-hidden="true">✳</span><h2>선생님 공간을 연결할 준비가 됐어요.</h2><p>공개 프로그램을 관리하려면 관리자 로그인과 공용 저장 공간을 먼저 연결해 주세요. 오늘의 미덕은 지금 바로 사용할 수 있어요.</p><ol><li>README의 설정 안내에 따라 Supabase와 Google 로그인을 연결해요.</li><li>지정할 Google 계정의 사용자 ID를 관리자 허용 목록에 등록해요.</li><li>환경 설정을 저장하고 개발 서버를 다시 시작해요.</li></ol><Link className="button primary" to="/virtue">오늘의 미덕 열기 <RainbowTile /></Link>{import.meta.env.DEV && <Link className="preview-link" to="/admin/preview">관리 화면 미리보기 → <span>이 브라우저의 임시 시연 · 공개 저장 안 됨</span></Link>}</div>;
+  return <div className="setup-panel"><span className="setup-symbol" aria-hidden="true">✳</span><h2>선생님 공간을 연결할 준비가 됐어요.</h2><p>공개 프로그램을 관리하려면 관리자 로그인과 공용 저장 공간을 먼저 연결해 주세요. 오늘의 미덕은 지금 바로 사용할 수 있어요.</p><ol><li>README의 설정 안내에 따라 Firebase와 Google 로그인을 연결해요.</li><li>지정할 Google 계정의 사용자 ID를 관리자 허용 목록에 등록해요.</li><li>환경 설정을 저장하고 개발 서버를 다시 시작해요.</li></ol><Link className="button primary" to="/virtue">오늘의 미덕 열기 <RainbowTile /></Link>{import.meta.env.DEV && <Link className="preview-link" to="/admin/preview">관리 화면 미리보기 → <span>이 브라우저의 임시 시연 · 공개 저장 안 됨</span></Link>}</div>;
 }
 function AdminPage({ preview = false }: { preview?: boolean }) {
   const auth = useAdmin();
@@ -140,20 +120,13 @@ function AdminPage({ preview = false }: { preview?: boolean }) {
     window.history.replaceState(null, '', current.pathname + current.search + current.hash);
   }, []);
   const programs = demoMode ? demo : remote;
-  const canEdit = demoMode || (!!auth.session && auth.role === 'admin');
+  const canEdit = demoMode || (!!auth.user && auth.role === 'admin');
   async function login() {
-    if (!supabase) return;
-    setLoginBusy(true); setMessage('');
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/admin` } });
-      if (error) throw error;
-    } catch { setMessage('로그인을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.'); setLoginBusy(false); }
+    setLoginBusy(true);setMessage('');
+    try {await loginGoogle();}catch(error){setMessage(friendlyError(error));}finally{setLoginBusy(false);}
   }
   async function logout() {
-    if (!supabase) return;
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
-    setMessage(error ? '로그아웃을 완료하지 못했어요. 다시 시도해 주세요.' : '로그아웃했어요.');
-    setEditing(null); setDeleting(null);
+    try {await logoutGoogle();setMessage('로그아웃했어요.');setEditing(null);setDeleting(null);}catch(error){setMessage(friendlyError(error));}
   }
   async function save(input: ProgramInput, id?: string) {
     if (demoMode) {
@@ -168,11 +141,11 @@ function AdminPage({ preview = false }: { preview?: boolean }) {
     else { await deleteProgram(id); reload(); }
     setDeleting(null); setMessage('프로그램을 삭제했어요.');
   }
-  return <main id="main" className="admin-page"><div className="page-toolbar"><Link to="/" className="back-link">← 공개 허브로</Link>{auth.session && <button className="text-button" onClick={logout}>로그아웃</button>}</div><div className="admin-heading"><p className="eyebrow">TEACHER'S SPACE</p><h1>선생님 공간</h1><p>교실에 필요한 프로그램을 하나씩 더해 보세요.</p></div>
+  return <main id="main" className="admin-page"><div className="page-toolbar"><Link to="/" className="back-link">← 공개 허브로</Link>{auth.user && <button className="text-button" onClick={logout}>로그아웃</button>}</div><div className="admin-heading"><p className="eyebrow">TEACHER'S SPACE</p><h1>선생님 공간</h1><p>교실에 필요한 프로그램을 하나씩 더해 보세요.</p></div>
     {message && <div className="notice" role="status">{message}</div>}
-    {!configured && !demoMode ? <SetupNotice /> : !canEdit ? <div className="login-panel"><RainbowTile /><h2>{auth.authLoading || auth.role === 'checking' ? '로그인을 확인하고 있어요…' : auth.session ? '지정한 선생님 계정만 관리할 수 있어요.' : '선생님, 반가워요.'}</h2><p>{auth.session ? '관리자 계정인지 확인하고 필요하면 다른 Google 계정으로 로그인해 주세요.' : '공개 목록 수정은 지정한 Google 계정으로만 할 수 있어요.'}</p>{auth.role === 'error' && <div role="alert"><p>관리자 권한을 확인하지 못했어요.</p><button className="text-button" onClick={auth.retry}>권한 다시 확인</button></div>}{!auth.session && !auth.authLoading && <button className="button primary" disabled={loginBusy} onClick={login}>{loginBusy ? 'Google로 이동 중…' : 'Google 계정으로 로그인'} <RainbowTile /></button>}<Link className="text-button" to="/">로그인 없이 프로그램 보기 →</Link></div> : <>
+    {!configured && !demoMode ? <SetupNotice /> : !canEdit ? <div className="login-panel"><RainbowTile /><h2>{auth.authLoading || auth.role === 'checking' ? '로그인을 확인하고 있어요…' : auth.user ? '지정한 선생님 계정만 관리할 수 있어요.' : '선생님, 반가워요.'}</h2><p>{auth.user ? '관리자 계정인지 확인하고 필요하면 다른 Google 계정으로 로그인해 주세요.' : '공개 목록 수정은 지정한 Google 계정으로만 할 수 있어요.'}</p>{auth.role === 'error' && <div role="alert"><p>관리자 권한을 확인하지 못했어요.</p><button className="text-button" onClick={auth.retry}>권한 다시 확인</button></div>}{!auth.user && !auth.authLoading && <button className="button primary" disabled={loginBusy} onClick={login}>{loginBusy ? 'Google로 이동 중…' : 'Google 계정으로 로그인'} <RainbowTile /></button>}<Link className="text-button" to="/">로그인 없이 프로그램 보기 →</Link></div> : <>
       {demoMode && <div className="notice preview-notice"><strong>관리 화면 미리보기</strong><p>로그인 없이 동작을 살펴보는 개발용 화면이에요. 추가한 내용은 이 화면에서만 보이고 새로고침하면 사라집니다. 공개 허브에는 저장되지 않아요.</p></div>}
-      <div className="admin-list-heading"><h2>프로그램 관리 <span className="count">{programs.length + 4}</span></h2><button className="button primary" onClick={() => { setMessage(''); setEditing('new'); }}>프로그램 추가 <span aria-hidden="true">＋</span></button></div>
+      <div className="admin-list-heading"><h2>프로그램 관리 <span className="count">{programs.length + 5}</span></h2><button className="button primary" onClick={() => { setMessage(''); setEditing('new'); }}>프로그램 추가 <span aria-hidden="true">＋</span></button></div>
       <div className="admin-list"><div className="admin-row builtin"><RainbowTile /><div className="admin-row-content"><h3>오늘의 미덕 <span className="small-badge">기본 프로그램</span></h3><p>미덕 설명과 실천 예시는 앱에 포함되어 있어요.</p></div><Link className="text-button" to="/virtue">열기 ↗</Link></div>
         {programs.map(p => <div className="admin-row" key={p.id}><div className="program-icon" aria-hidden="true">✳</div><div className="admin-row-content"><h3>{p.title}</h3><p>{p.description}</p><span className="url-label">{p.url}</span></div><div className="row-actions"><button className="text-button" onClick={() => { setMessage(''); setEditing(p); }}>수정<span className="sr-only"> {p.title}</span></button><button className="text-button danger" onClick={() => setDeleting(p)}>삭제<span className="sr-only"> {p.title}</span></button></div></div>)}
       </div>

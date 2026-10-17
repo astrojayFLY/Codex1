@@ -1,121 +1,58 @@
 # 무지개 교실
 
-초등학교 교실용 프로그램 허브와 ‘오늘의 미덕’ 웹앱입니다. 제작 기준은 상위 폴더의 `DEVELOPMENT_SPEC.md`, 콘텐츠 기준은 `VIRTUE_CONTENT_GUIDE.md`입니다.
+[교실 도구 허브](https://astrojayfly.github.io/Codex1/) · [무지개 교실](https://rainbow-classroom-astrojay.web.app/) · [무지개 수학](https://astrojayfly.github.io/Codex1/math-play/)
 
-## 지금 실행하기
+React·TypeScript·Vite로 만든 교실 프로그램입니다. 오늘의 미덕, 빠른 뽑기, PDF 글자 수, Google 로그인과 개인 일기, 관리자 프로그램 목록을 제공합니다.
 
-Windows에서는 이 폴더의 `start-local.cmd`를 두 번 클릭하고 표시된 주소를 브라우저에서 여세요. 기본 주소는 **http://127.0.0.1:4180/** 입니다. 이미 개발 서버가 실행 중이면 그 주소를 그대로 이용하세요. 이 주소는 현재 컴퓨터에서만 접속할 수 있습니다.
+## 실행 및 검증
 
-표준 Node.js와 pnpm이 설치된 환경에서는 다음 명령을 사용할 수 있습니다.
+Node.js 24와 pnpm을 준비한 뒤 이 폴더에서 실행합니다.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 pnpm test
 pnpm build
 ```
 
-Node.js 22 이상을 권장합니다. `pnpm-lock.yaml`에 실제 설치 버전이 기록되어 있습니다. 현재 작업 환경에는 번들 Node.js와 pnpm으로 의존성을 설치해 두었습니다. 실행 파일을 못 찾으면 `start-local.cmd`의 번들 경로를 확인하세요.
+브라우저 검증 스크립트에는 별도로 설치한 Playwright와 Microsoft Edge가 필요합니다. `src/firebase-config.json`은 웹앱의 공개 Firebase 식별 설정이며 서버 비밀키가 아닙니다. 개인키·서비스 계정 JSON·OAuth 비밀값을 소스나 VITE 환경변수에 넣지 마세요. 이 앱에는 Analytics SDK가 없습니다.
 
-## 사용할 수 있는 기능
+## 백엔드와 로그인
 
-- `/`: 공개 프로그램 허브, 기본 미덕 앱 진입, 외부 프로그램 카드.
-- `/virtue`: 서울 날짜별 미덕, 설명, 행동 예시 3개, 오늘의 실천. 다른 미덕과 기본값 복귀, 전체 화면.
-- `/admin`: 실제 Google 관리자 로그인 및 프로그램 추가·수정·삭제. 외부 설정이 없으면 연결 안내를 표시합니다.
-- `/admin/preview`: 개발 서버에서만 제공하는 임시 관리 시연. 실제 로그인·공개 저장 없이 폼을 살펴봅니다. 새로고침하면 초기화됩니다. 프로덕션 빌드에는 이 경로가 없습니다.
+- Firebase 프로젝트: `rainbow-classroom-astrojay`
+- Firestore: Enterprise Native, `classroom-live`, 서울 `asia-northeast3`, 실시간 조회 사용.
+- Google 로그인: Firebase Authentication. 공용 기기를 고려해 브라우저 세션에만 로그인 상태를 보관합니다.
+- 공개 `programs` 목록: 최대 100개. 로그인하지 않아도 조회할 수 있습니다.
+- `admin_users/{uid}`: `enabled: true`가 등록된 Google 계정만 프로그램을 추가·수정·삭제합니다. 이 허용 목록은 클라이언트가 수정할 수 없습니다. 계정의 로그인 UUID를 확인한 운영자가 Firebase 관리 도구로 등록합니다. 이메일·UUID를 공개 README에 적지 않습니다.
+- `users/{uid}/entries/{id}`: 로그인한 본인의 일기만 읽고 수정·삭제합니다. 관리자를 포함해 다른 사용자의 일기 접근은 차단됩니다. 화면은 날짜 내림차순 최근 500개를 표시하고 검색합니다.
 
-학생 이름·활동 기록·평가를 받지 않습니다. 미덕 데이터는 앱 안에 있고 콘텐츠 조회 API·외부 AI 호출이 없습니다. 허브의 DB가 응답하지 않아도 내장 미덕 카드는 사용할 수 있습니다.
+프로그램과 일기는 열린 화면에 변경 사항을 전달하기 위해 실시간 snapshot 조회를 사용합니다. 실시간 표시가 필요한 이 두 흐름에는 일반 snapshot 쿼리를 사용하고, 불필요한 파이프라인 조회는 추가하지 않았습니다. Firestore 캐시는 메모리에서만 유지합니다. 계정을 바꾸면 일기 화면도 새로 생성해 이전 계정의 기록을 지웁니다.
 
-## 미덕 콘텐츠 검토
+일기는 Google Cloud에 저장되며 종단 간 암호화 저장소는 아닙니다. 학생 개인정보·주민번호·민감한 기록을 입력하지 마세요. 삭제 기능과 로그아웃을 제공하며, 기존 `data/diary.json`은 읽거나 자동 업로드하지 않습니다. 이전 로컬 일기 API 스크립트는 과거 로컬 검증용으로 남아 있지만 Vite와 배포 앱에는 연결되지 않습니다. 이전 Supabase SQL·내보내기 스크립트도 현재 운영 백엔드에서 사용하지 않습니다.
 
-`src/data/virtues.ts`에 사용자 제공 HWP의 24개 덕목을 기반으로 새로 작성한 콘텐츠를 넣었습니다. 배려는 제공 카드 본문도 참고했고 나머지 카드 51개 본문은 개별 검토 전입니다. 카드 이미지는 공개 앱에 포함하지 않았습니다.
+## 보안 규칙 검증
 
-내용은 교사 검토 전 초안입니다. 로컬 시연에서는 초안 안내와 함께 사용할 수 있습니다. `CONTENT_REVIEW.md`에서 24개 항목을 읽고 어휘·실천 난이도·가족 다양성·안전한 도움 요청을 검토하세요. 공개 전 교사가 검토한 뒤 `.env.local`의 `VITE_CONTENT_APPROVED=true`로 명시하고 다시 빌드하세요. 이 플래그는 검토 사실을 대신하지 않습니다. `reviewStatus`는 이 배포 승인 설정에 따라 정해지며 날짜 선정 순서는 바꾸지 않습니다.
+`firestore.rules`에 허용 필드, 자료형·길이, 소유자, 관리자 권한, 생성 시각 불변성과 서버 수정 시각 검증을 둡니다. `scripts/firestore-rules-check.mjs`는 합성 자료만 사용하며 `FIRESTORE_EMULATOR_HOST`가 없으면 실행을 거부합니다. Java 21 이상과 Firebase CLI의 에뮬레이터에서 실행하세요. 실제 프로젝트를 지정해 테스트하지 마세요.
 
-## Supabase와 Google 로그인 설정
+규칙 검증은 에뮬레이터에서 수행하므로, Enterprise 실서비스의 인덱스·실시간 모드·인증 공급자 설정은 배포 후 별도로 확인합니다. 관리자 허용 목록을 해제하면 기존 로그인 세션도 다시 쓰지 못해야 합니다. 이 규칙은 초기 운영용이며 기능이나 데이터 구조가 바뀌면 재검토하세요.
 
-이 프로젝트에는 실제 Supabase 프로젝트, Google OAuth 자격 정보, 관리자 계정이 아직 연결되지 않았습니다. 계정 생성·결제·배포는 수행하지 않았습니다. 아래 설정은 운영자가 해당 서비스의 공식 설정 안내를 확인하며 진행하세요. 가격·무료 한도는 고정하지 않았습니다.
-
-1. 별도의 Supabase 프로젝트를 준비하고 SQL Editor에서 `supabase/migrations/001_initial.sql`을 실행합니다. 기존 테이블과 충돌하는 운영 DB에 바로 실행하지 마세요.
-2. Supabase Authentication에서 Google 공급자를 설정합니다. Google OAuth의 client secret은 **Supabase 설정에만** 입력합니다. 클라이언트 소스·VITE 환경변수에는 넣지 않습니다.
-3. Google의 승인된 리디렉션 URI는 해당 Supabase 프로젝트가 제공하는 Auth callback 주소를 사용합니다. Supabase의 허용 Redirect URL에는 개발용 `http://127.0.0.1:4180/admin`, 운영용 실제 HTTPS `/admin` 주소를 각각 등록합니다. Site URL도 실제 환경에 맞춥니다.
-4. `.env.example`을 `.env.local`로 복사하고 프로젝트 URL과 **공개용 anon/publishable 키**를 넣습니다. `service_role`, 비밀 API 키, OAuth client secret을 넣지 마세요. 파일은 Git에서 제외됩니다. 환경변수 변경 후 서버를 다시 시작합니다.
-5. 지정하려는 Google 계정으로 `/admin`에서 로그인합니다. 이때는 관리자 권한이 없으므로 수정할 수 없는 것이 정상입니다.
-6. Supabase Authentication → Users에서 그 계정의 UUID를 확인하고 DB 소유자 권한으로 아래 SQL을 실행합니다. 실제 UUID를 공개 문서에 저장하지 마세요.
-
-```sql
-insert into public.admin_users(user_id) values ('지정한-인증-사용자의-UUID');
-```
-
-7. 관리자 화면을 다시 열어 목록 관리가 가능한지 확인합니다. 다른 Google 계정은 로그인해도 수정하지 못해야 합니다. 허용 목록은 한 행만 등록할 수 있습니다.
-
-관리자 교체·폐기 시에는 기존 허용 행을 먼저 삭제합니다. 그 뒤 새 계정 등록, 기존 세션 해제, 필요 시 인증 계정 삭제를 진행합니다. 허용 해제 후 남은 세션으로 쓰기가 거절되는지 확인하세요.
-
-```sql
-delete from public.admin_users where user_id = '기존-관리자-UUID';
-```
-
-관리자 식별자는 이메일 문자열의 화면 비교가 아니라 인증 UUID와 DB RLS로 검증합니다. 일반 클라이언트는 허용 목록을 수정할 수 없습니다. 세션은 `sessionStorage`를 사용합니다. 공유 교실 PC에서는 수업 전 로그아웃하세요.
-
-## 실제 권한 검증 — 서비스 연결 후 필수
-
-운영과 분리된 테스트 DB에서 다음을 확인합니다. 현재 환경에서는 실 서비스 설정이 없어 이 검증은 수행하지 못했습니다.
-
-| 주체 | 공개 조회 | programs 추가/수정/삭제 | admin_users 변경 |
-|---|---|---|---|
-| 익명 | 허용 | 거절 | 거절 |
-| 비관리 Google 계정 | 허용 | 거절 | 거절 |
-| 지정 관리자 | 허용 | 허용 | 거절 |
-| 허용 행이 삭제된 기존 관리자 | 허용 | 거절 | 거절 |
-
-화면 버튼 여부만 검사하지 말고 해당 사용자 JWT를 사용한 Supabase SDK 직접 요청에서도 검증하세요. 화면에서 저장한 프로그램이 다른 비로그인 브라우저의 새 조회에 반영되는지 확인합니다. 자동 실시간 갱신은 요구하지 않습니다. 수정·삭제 시 영향 행이 없으면 성공으로 표시하지 않습니다.
-
-## 데이터·콘텐츠 수정 방법
-
-- 외부 프로그램: 연결 후 `/admin`에서 제목·설명·HTTPS 주소를 입력합니다. 저장 즉시 DB에 반영되고 새 조회에 공개됩니다. 동일한 정규화 URL은 중복 저장하지 않습니다.
-- 기본 미덕 카드: 코드에 포함되므로 관리 화면에서 삭제하지 않습니다.
-- 미덕 설명: `src/data/virtues.ts`의 내용과 참고 기록을 수정하고 테스트합니다. 검토 후 재빌드합니다. ID 순서를 바꾸면 날짜별 배정이 바뀌므로 유지하세요.
-- 미덕은 30초 간격과 창 재활성화 시 서울 날짜 변경을 확인합니다. 임시 선택은 메모리에만 유지합니다. 기기 시계가 틀리면 날짜도 달라질 수 있습니다.
-
-## 검증과 화면 확인
+## 배포
 
 ```sh
-pnpm test
 pnpm build
+npx -y firebase-tools@latest deploy --only firestore,hosting --project rainbow-classroom-astrojay
 ```
 
-`scripts/browser-check.cjs`는 현재 작업 환경의 번들 Playwright와 Edge로 허브·미덕·개발용 관리 폼을 검사합니다. 다른 컴퓨터에서는 해당 스크립트의 Playwright 경로를 로컬 설치 경로로 바꾸세요. 개발 서버를 실행한 상태에서 `node scripts/browser-check.cjs`로 검사합니다. 결과와 화면 캡처는 `test-results/`에 저장합니다. 실제 인증 검증을 대신하지 않습니다.
+`firebase.json`은 빌드된 `dist`만 Hosting에 올립니다. SPA 경로는 `index.html`로 연결하고, HTTPS·보안 헤더와 정적 자산 캐시를 설정합니다. 소스·환경파일·일기·백업은 Hosting에 포함하지 않습니다.
 
-## 공개 목록 백업·복구
+Google 공급자 초기 활성화에는 다음 형태의 **Git 제외 로컬 설정** `firebase.local.json`을 사용합니다. 공개 `firebase.json`에 개인 지원 이메일을 넣지 않습니다.
 
-1. 터미널 환경에 `SUPABASE_URL`, `SUPABASE_ANON_KEY`를 설정하고 `node scripts/export-programs.mjs`를 실행합니다. 공개 programs만 JSON으로 내보내며 사용자·인증 정보는 포함하지 않습니다. 키를 명령 인수나 출력에 넣지 않습니다.
-2. `node scripts/restore-programs.mjs <백업파일.json>`으로 복구 SQL을 생성합니다. 생성 파일을 검토한 뒤 먼저 테스트 DB에서 DB 소유자 권한으로 실행합니다. 기존 행을 삭제하지 않으며 같은 ID는 건너뜁니다.
-3. 빈 테스트 DB에 같은 스키마를 적용하고 복구한 뒤 원본과 행 수 및 title/description/url을 비교합니다. 실제 복구 검증은 DB 설정 후 수행해야 합니다.
+```json
+{"auth":{"providers":{"googleSignIn":{"oAuthBrandDisplayName":"Rainbow Classroom","supportEmail":"본인의-지원-이메일"}}}}
+```
 
-권장 초기 운영값은 월 1회와 스키마 변경 전 내보내기, 최근 3개 보관입니다. 호스팅·인증 서비스의 별도 로그·백업 보관 정책은 운영자가 확인해야 합니다.
+```sh
+npx -y firebase-tools@latest deploy --only auth --config firebase.local.json --project rainbow-classroom-astrojay
+```
 
-## 빌드와 배포 준비
-
-현재는 로컬 시연용으로 구현했습니다. 공개 전에는 콘텐츠 교사 검토, 실제 인증·DB 권한 검증, 학교 외부 접속 정책, 요금·백업 설정을 확인하세요.
-
-`pnpm build`는 `dist/`를 생성합니다. 정적 호스팅에서 `/virtue`, `/admin`을 직접 열어도 index.html로 연결되도록 SPA fallback을 설정하세요. Netlify/Cloudflare Pages용 `_redirects`, Vercel용 `vercel.json`을 포함합니다. 공개용 빌드에는 `/admin/preview` 경로가 없으며 개발 미리보기는 배포하지 않습니다.
-
-운영은 HTTPS를 사용합니다. 전체 화면 API가 제한되면 브라우저 자체 전체 화면을 사용하세요. 완전 오프라인 최초 접속, 학생 계정, 실천 기록, 대규모 동시접속 보장은 포함하지 않습니다.
-
-## 현재 검증 범위
-
-- TypeScript 검사, Vite 프로덕션 빌드.
-- 서울 날짜·윤일·자정 경계·임시 선택·입력 검증·콘텐츠 구조 단위 테스트 14개.
-- 로컬 Edge에서 허브·미덕 흐름, 4개 화면 폭, 개발용 관리자 CRUD·중복·삭제 취소·URL 거절·오류 표시 검사.
-- 미검증: 실 서비스 Google OAuth, DB SQL 실제 실행·RLS, 원격 반영, 실제 DB 복구, 실제 교실 화면. 현재 구현 완료와 실 서비스 운영 연결 완료를 구분합니다.
-
-## 빠른 뽑기
-
-허브의 ‘빠른 뽑기’ 또는 /draw에서 실행합니다. 1초 룰렛, 카드 선택, 최대 100명 명단(줄바꿈·쉼표 구분), 번호 생성, 중복 제외, 초기화, 뽑기 기록, 전체 화면과 접기 화면을 지원합니다. 명단과 기록은 메모리에만 두며 새로고침·페이지 이동 시 초기화됩니다. 작게 접기는 웹페이지 안의 축소 화면으로, 바탕화면 위에 떠 있는 별도 창은 아닙니다.
-
-
-## 나의 하루 · 일기장
-허브 카드 또는 /diary에서 사용합니다. start-local.cmd로 로컬 서버를 실행하세요. 날짜·기분·제목·본문 기록, 검색, 수정, 삭제를 지원합니다. 저장 버튼을 눌러야 파일에 반영됩니다.
-일기는 data/diary.json에 JSON 데이터베이스로 저장됩니다. 첫 저장 시 생성되며 서버 재시작 후에도 유지됩니다. 백업은 서버 종료 후 data 폴더를 복사하세요. 복구는 서버 종료 후 파일을 원래 위치에 덮어씁니다. data 폴더는 Git에서 제외합니다. 프로젝트가 OneDrive 아래에 있으므로 설정에 따라 동기화될 수 있습니다.
-일기 API는 로컬 Vite 개발/미리보기 서버에서 제공합니다. 정적 원격 배포에서는 로컬 저장이 작동하지 않습니다. 암호화와 사용자별 계정 분리는 제공하지 않습니다.
-
+미덕 24개 콘텐츠는 교사 검토 전 초안으로 표시됩니다. [콘텐츠 검토본](CONTENT_REVIEW.md)을 확인하고 실제 검토 후에만 `VITE_CONTENT_APPROVED=true`로 빌드하세요. PDF.js·폰트·WASM의 라이선스는 `public/pdf-counter/vendor/`에 보존합니다.

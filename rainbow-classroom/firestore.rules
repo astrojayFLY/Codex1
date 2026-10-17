@@ -1,0 +1,58 @@
+rules_version = '2';
+// programs/{urlHash}: title(1..60), description(1..200), HTTPS url(max2048),
+// created_at(timestamp, immutable), updated_at(timestamp).
+// admin_users/{uid}: enabled(bool); privileged operators provision these records.
+// users/{uid}/entries/{id}: date(YYYY-MM-DD), title(1..100), content(1..30000),
+// mood(enum), createdAt(timestamp, immutable), updatedAt(timestamp).
+// Ownership is the immutable UID in the document path. No global diary access.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function googleUser() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+    function owner(uid) { return googleUser() && request.auth.uid == uid; }
+    function admin() {
+      return googleUser() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.enabled == true;
+    }
+    function validProgram(data) {
+      return data.keys().hasAll(['title','description','url','created_at','updated_at'])
+        && data.keys().hasOnly(['title','description','url','created_at','updated_at'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 60
+        && data.description is string && data.description.size() > 0 && data.description.size() <= 200
+        && data.url is string && data.url.size() <= 2048
+        && data.url.matches('https://[^/@\\s]+[.][^/@\\s]+([/?#][^\\s]*)?')
+        && data.created_at is timestamp && data.updated_at == request.time;
+    }
+    function validEntry(data) {
+      return data.keys().hasAll(['date','title','content','mood','createdAt','updatedAt'])
+        && data.keys().hasOnly(['date','title','content','mood','createdAt','updatedAt'])
+        && data.date is string && data.date.matches('[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])')
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 30000
+        && data.mood in ['행복','평온','보통','속상','피곤']
+        && data.createdAt is timestamp && data.updatedAt == request.time;
+    }
+    match /programs/{id} {
+      // The classroom tool catalog is intentionally public, including the Pages hub.
+      allow get: if true;
+      allow list: if request.query.limit != null && request.query.limit <= 100;
+      allow create: if admin() && validProgram(request.resource.data) && request.resource.data.created_at == request.time;
+      allow update: if admin() && validProgram(request.resource.data) && request.resource.data.created_at == resource.data.created_at;
+      allow delete: if admin();
+    }
+    match /admin_users/{uid} {
+      allow get: if owner(uid);
+      allow list, create, update, delete: if false;
+    }
+    match /users/{uid}/entries/{id} {
+      allow get: if owner(uid);
+      allow list: if owner(uid) && request.query.limit != null && request.query.limit <= 500;
+      allow create: if owner(uid) && validEntry(request.resource.data) && request.resource.data.createdAt == request.time;
+      allow update: if owner(uid) && validEntry(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if owner(uid);
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

@@ -4,10 +4,11 @@ if (config?.deployed && config?.classroomUrl && /^https:\/\/[a-z0-9-]+\.web\.app
 else { classroomLink.removeAttribute('href'); classroomLink.setAttribute('aria-disabled','true'); classroomLink.textContent='교실 연결 준비 중'; }
 if (config?.projectId) {
   try {
-    const response = await fetch(`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/databases/(default)/documents/programs?pageSize=100`, {signal:AbortSignal.timeout(10000)});
+    const response = await fetch(`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/databases/${encodeURIComponent(config.databaseId)}/documents:runQuery`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:{from:[{collectionId:'programs'}],orderBy:[{field:{fieldPath:'created_at'},direction:'ASCENDING'}],limit:100}}),signal:AbortSignal.timeout(10000)});
     if (!response.ok) throw Error();
     const result = await response.json();
-    for (const document of result.documents || []) {
+    for (const row of result) {
+      const document=row.document;if(!document)continue;
       const f = document.fields;
       const url = new URL(f.url.stringValue);
       if (url.protocol !== 'https:' || url.username || url.password) continue;
