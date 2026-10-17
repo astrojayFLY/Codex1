@@ -1,5 +1,7 @@
 const config = await fetch('./config.json').then(r => { if (!r.ok) throw Error(); return r.json(); }).catch(() => null);
-if (config?.classroomUrl && /^https:\/\/[a-z0-9-]+\.web\.app\/$/.test(config.classroomUrl)) document.querySelector('#classroom-link').href = config.classroomUrl;
+const classroomLink = document.querySelector('#classroom-link');
+if (config?.deployed && config?.classroomUrl && /^https:\/\/[a-z0-9-]+\.web\.app\/$/.test(config.classroomUrl)) classroomLink.href = config.classroomUrl;
+else { classroomLink.removeAttribute('href'); classroomLink.setAttribute('aria-disabled','true'); classroomLink.textContent='교실 연결 준비 중'; }
 if (config?.projectId) {
   try {
     const response = await fetch(`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/databases/(default)/documents/programs?pageSize=100`, {signal:AbortSignal.timeout(10000)});
