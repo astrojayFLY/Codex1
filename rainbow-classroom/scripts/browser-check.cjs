@@ -1,0 +1,84 @@
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const fs = require('node:fs');
+(async () => {
+  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const folder = path.resolve(__dirname, '../test-results'); fs.mkdirSync(folder, { recursive: true });
+  const results = [];
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1040 } });
+    const errors = []; page.on('pageerror', error => errors.push(error.message));
+    const response = await page.goto('http://127.0.0.1:4180/'); assert.equal(response.status(), 200);
+    await page.getByRole('heading', { name: /우리 교실의 하루에/ }).waitFor();
+    assert.equal(await page.locator('.featured-program').count(), 1);
+    await page.screenshot({ path: path.join(folder, 'hub-desktop.png'), fullPage: true });
+    results.push('공개 허브와 내장 프로그램 카드');
+    await page.getByRole('link', { name: '오늘의 미덕 만나기' }).click();
+    await page.locator('#virtue-name').waitFor();
+    const today = await page.locator('#virtue-name').textContent();
+    assert.equal(await page.locator('.virtue-examples li').count(), 3);
+    await page.getByRole('button', { name: '다른 미덕 만나기' }).click();
+    assert.notEqual(await page.locator('#virtue-name').textContent(), today);
+    await page.getByRole('button', { name: '오늘의 미덕으로 돌아가기' }).click();
+    assert.equal(await page.locator('#virtue-name').textContent(), today);
+    await page.getByRole('button', { name: '다른 미덕 만나기' }).click();
+    await page.reload(); await page.locator('#virtue-name').waitFor();
+    assert.equal(await page.locator('#virtue-name').textContent(), today);
+    await page.screenshot({ path: path.join(folder, 'virtue-desktop.png'), fullPage: true });
+    results.push('날짜 기본값·다른 미덕·복귀·새로고침, 예시 3개');
+    for (const width of [360, 768, 1366, 1920]) {
+      await page.setViewportSize({ width, height: 1000 });
+      for (const route of ['/', '/virtue', '/admin']) {
+        await page.goto('http://127.0.0.1:4180' + route); await page.locator('#main').waitFor();
+        assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Overflow ${route} ${width}`);
+      }
+    }
+    results.push('360·768·1366·1920px 허브/미덕/관리 가로 넘침 없음');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('http://127.0.0.1:4180/virtue');
+    await page.screenshot({ path: path.join(folder, 'virtue-mobile.png'), fullPage: true });
+    await page.goto('http://127.0.0.1:4180/');
+    await page.screenshot({ path: path.join(folder, 'hub-mobile.png'), fullPage: true });
+    await page.setViewportSize({ width: 1366, height: 1000 });
+    await page.goto('http://127.0.0.1:4180/admin');
+    await page.getByRole('link', { name: /관리 화면 미리보기/ }).click();
+    await page.getByRole('button', { name: '프로그램 추가' }).click();
+    await page.getByRole('button', { name: '저장하기' }).click();
+    assert.equal(await page.locator('[aria-invalid=true]').count(), 3);
+    assert.equal(await page.locator('#field-title').evaluate(e => document.activeElement === e), true);
+    await page.getByLabel('프로그램 이름').fill('테스트 놀이');
+    await page.getByLabel('한 줄 소개').fill('함께하는 프로그램');
+    await page.getByLabel('인터넷 주소').fill('javascript:alert(1)');
+    await page.getByRole('button', { name: '저장하기' }).click();
+    assert.equal(await page.locator('#field-url[aria-invalid=true]').count(), 1);
+    await page.getByLabel('인터넷 주소').fill('https://example.com');
+    await page.getByRole('button', { name: '저장하기' }).click();
+    await page.getByRole('heading', { name: '테스트 놀이' }).waitFor();
+    await page.getByRole('button', { name: '수정 테스트 놀이' }).click();
+    await page.getByLabel('프로그램 이름').fill('<script>창의 놀이</script>');
+    await page.getByRole('button', { name: '저장하기' }).click();
+    await page.getByRole('heading', { name: '<script>창의 놀이</script>' }).waitFor();
+    assert.equal(await page.locator('.admin-row-content script').count(), 0);
+    await page.getByRole('button', { name: '프로그램 추가' }).click();
+    await page.getByLabel('프로그램 이름').fill('중복');
+    await page.getByLabel('한 줄 소개').fill('중복 주소 확인');
+    await page.getByLabel('인터넷 주소').fill('https://example.com/');
+    await page.getByRole('button', { name: '저장하기' }).click();
+    await page.getByRole('alert').filter({ hasText: '이미 있어요' }).waitFor();
+    assert.equal(await page.getByLabel('프로그램 이름').inputValue(), '중복');
+    await page.keyboard.press('Escape'); assert.equal(await page.locator('dialog').count(), 0);
+    await page.getByRole('button', { name: '삭제 <script>창의 놀이</script>' }).click();
+    await page.getByRole('button', { name: '취소', exact: true }).click();
+    assert.equal(await page.locator('.admin-row').count(), 2);
+    await page.screenshot({ path: path.join(folder, 'admin-desktop.png'), fullPage: true });
+    await page.getByRole('button', { name: '삭제 <script>창의 놀이</script>' }).click();
+    await page.getByRole('button', { name: '삭제하기', exact: true }).click();
+    assert.equal(await page.locator('.admin-row').count(), 1);
+    results.push('개발용 관리 미리보기: 추가·수정·삭제·취소·중복·URL 거절·텍스트 이스케이프·폼 초점·Escape');
+    assert.deepEqual(errors, []);
+    results.push('브라우저 런타임 오류 없음');
+    fs.writeFileSync(path.join(folder, 'browser-results.json'), JSON.stringify({ passed: results, limitations: ['실제 Supabase·Google OAuth·DB RLS는 서비스 설정 전으로 미검증'] }, null, 2));
+    console.log('PASS: ' + results.join('\nPASS: '));
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

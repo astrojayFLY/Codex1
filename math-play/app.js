@@ -1,0 +1,43 @@
+'use strict';
+const games = [
+ {id:'number',topic:'number',name:'세 자리 수 탐험',desc:'백, 십, 일을 모아 숫자를 완성해요.',color:'lavender',art:['1','2','3'],tag:'수의 크기와 자릿값'},
+ {id:'sum',topic:'number',name:'덧셈 뺄셈 팡팡',desc:'두 자리 수를 더하고 빼며 힘을 키워요.',color:'peach',art:['8','+','5'],tag:'두 자리 수의 계산'},
+ {id:'multiply',topic:'number',name:'구구단 무지개',desc:'같은 수를 묶으면 곱셈이 보여요.',color:'mint',art:['3','×','4'],tag:'2단부터 9단까지'},
+ {id:'clock',topic:'measure',name:'째깍째깍 시계',desc:'시곗바늘을 보고 시각을 읽어요.',color:'blue',art:['◷','?'],tag:'몇 시 몇 분'},
+ {id:'length',topic:'measure',name:'길이 쑥쑥 정원',desc:'미터와 센티미터로 길이를 재요.',color:'rose',art:['↔','㎝'],tag:'m와 cm 알아보기'},
+ {id:'pattern',topic:'pattern',name:'알록달록 규칙',desc:'숫자 속에 숨은 규칙을 찾아요.',color:'yellow',art:['●','▲','●'],tag:'반복과 수의 규칙'}
+];
+const $=s=>document.querySelector(s), modal=$('#modal'), body=$('#modal-body');
+let topic='all', session=null, saved={rounds:0,correct:0,answered:0,stars:0,history:[]}, storageOK=true;
+try{const v=JSON.parse(localStorage.getItem('rainbow-math-grade2')||'null');if(v&&['rounds','correct','answered','stars'].every(k=>Number.isFinite(v[k])&&v[k]>=0)&&Array.isArray(v.history))saved=v;}catch{storageOK=false;}
+function persist(){try{localStorage.setItem('rainbow-math-grade2',JSON.stringify(saved));}catch{storageOK=false;}}
+function render(){const q=$('#search').value.trim();const list=games.filter(g=>(topic==='all'||g.topic===topic)&&`${g.name} ${g.desc} ${g.tag}`.includes(q));$('#count').textContent=`${list.length}개의 즐거운 모험`;$('#grid').innerHTML=list.map(g=>`<article class="game"><div class="art ${g.color}" aria-hidden="true">${g.art.map(a=>`<span>${a}</span>`).join('')}</div><div class="game-content"><div class="meta"><span>${g.tag}</span><span class="badge">2학년</span></div><h3>${g.name}</h3><p>${g.desc}</p><div class="game-bottom"><span>✦ 5문제 · 시간 제한 없음</span><button class="play-btn" data-game="${g.id}" aria-label="${g.name} 시작">시작하기 ↗</button></div></div></article>`).join('');$('#empty').hidden=list.length>0;}
+$('.grades').addEventListener('click',e=>{const b=e.target.closest('[data-topic]');if(!b)return;topic=b.dataset.topic;document.querySelectorAll('[data-topic]').forEach(el=>el.classList.toggle('selected',el===b));render();});
+$('#search').addEventListener('input',render);
+$('#grid').addEventListener('click',e=>{const b=e.target.closest('[data-game]');if(b)start(b.dataset.game);});
+function show(html){body.innerHTML=html;if(!modal.open)modal.showModal();}
+$('#close').onclick=()=>modal.close();
+modal.addEventListener('click',e=>{if(e.target===modal){const r=modal.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)modal.close();}});
+const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+function shuffle(a){return a.sort(()=>Math.random()-.5);}
+function options(answer,unit='',min=0,max=999){const values=new Set([answer]);let n=0;while(values.size<4&&n++<100){const x=answer+rand(-10,10);if(x>=min&&x<=max)values.add(x);}for(let x=min;values.size<4&&x<=max;x++)values.add(x);return shuffle([...values]).map(x=>({value:x,label:`${x}${unit}`}));}
+function clockSVG(h,m){const hand=(a,l,w)=>{const r=a*Math.PI/180;return `<line x1="70" y1="70" x2="${70+Math.sin(r)*l}" y2="${70-Math.cos(r)*l}" stroke="#514569" stroke-width="${w}" stroke-linecap="round"/>`;};return `<svg class="clock" viewBox="0 0 140 140" role="img" aria-label="아날로그 시계"><circle cx="70" cy="70" r="66" fill="#f4efff"/>${Array.from({length:12},(_,i)=>{const n=i+1,a=n*Math.PI/6;return `<text x="${70+Math.sin(a)*51}" y="${75-Math.cos(a)*51}" text-anchor="middle" font-size="12" fill="#514569">${n}</text>`;}).join('')}${hand(h*30+m*.5,29,5)}${hand(m*6,41,3)}<circle cx="70" cy="70" r="4" fill="#ff8a00"/></svg>`;}
+function question(id){
+ let a,b,answer,prompt,hint,visual='',choices;
+ if(id==='number'){a=rand(1,9);b=rand(0,9);const c=rand(0,9);answer=a*100+b*10+c;prompt=`백 ${a}개, 십 ${b}개, 일 ${c}개`;hint=`백 ${a}개는 ${a*100}, 십 ${b}개는 ${b*10}, 일 ${c}개는 ${c}예요. 모두 더해 보세요.`;}
+ if(id==='sum'){a=rand(12,79);b=rand(11,99-a);const plus=rand(0,1);if(!plus&&a<b)[a,b]=[b,a];answer=plus?a+b:a-b;prompt=`${a} ${plus?'+':'−'} ${b} = ?`;hint=plus?'일의 자리부터 더해요. 10이 되면 십의 자리로 1을 올려요.':'일의 자리부터 빼요. 부족하면 십의 자리에서 10을 빌려 와요.';}
+ if(id==='multiply'){a=rand(2,9);b=rand(1,9);answer=a*b;prompt=`${a} × ${b} = ?`;hint=`${a}씩 ${b}묶음이에요. ${Array.from({length:b},()=>a).join(' + ')}를 계산해 보세요.`;}
+ if(id==='clock'){a=rand(1,12);b=rand(0,11)*5;answer=a*60+b;prompt='시계는 몇 시 몇 분일까요?';visual=clockSVG(a,b);hint=`짧은 바늘은 시, 긴 바늘은 분을 알려 줘요. 긴 바늘의 숫자에 5를 곱해요.`;choices=shuffle([answer,a*60+(b+5)%60,(a%12+1)*60+b,a*60+(b+30)%60]).map(v=>({value:v,label:`${Math.floor(v/60)}시 ${v%60}분`}));}
+ if(id==='length'){a=rand(1,5);b=rand(1,9)*10;answer=a*100+b;prompt=`${a} m ${b} cm = ? cm`;hint=`1 m는 100 cm예요. ${a} m는 ${a*100} cm니까 ${b} cm를 더해요.`;}
+ if(id==='pattern'){a=rand(1,20);b=rand(2,9);answer=a+b*4;prompt=`${a}, ${a+b}, ${a+b*2}, ${a+b*3}, ?`;hint=`앞의 수보다 ${b}씩 커지고 있어요. 마지막 수에도 ${b}를 더해요.`;}
+ return {answer,prompt,hint,visual,choices:choices||options(answer,id==='length'?' cm':'')};
+}
+function start(id){session={id,index:0,score:0,attempted:false,questions:Array.from({length:5},(_,i)=>question(id==='daily'?games[i%games.length].id:id))};draw();}
+function draw(){if(!session)return;session.attempted=false;const q=session.questions[session.index];const title=session.id==='daily'?'오늘의 도전':games.find(g=>g.id===session.id).name;show(`<span class="kicker">2학년 · ${session.index+1} / 5 문제</span><h2>${title}</h2><div class="progress"><div style="width:${session.index*20}%"></div></div>${q.visual}<div class="question ${q.visual?'small':''}">${q.prompt}</div><div class="answers">${q.choices.map(c=>`<button data-answer="${c.value}">${c.label}</button>`).join('')}</div><div class="feedback" aria-live="polite">천천히 생각해도 좋아요.</div><button class="text-btn" id="hint">💡 힌트 보기</button><button class="primary next" id="next" hidden>${session.index===4?'결과 보기':'다음 문제'} →</button>`);$('#hint').onclick=()=>{$('.feedback').textContent=q.hint;};body.querySelectorAll('[data-answer]').forEach(btn=>btn.onclick=()=>answer(Number(btn.dataset.answer),btn));$('#next').onclick=()=>{session.index++;if(session.index===5)finish();else draw();};}
+function answer(value,btn){if(!session)return;const q=session.questions[session.index];if(value===q.answer){if(!session.attempted)session.score++;btn.classList.add('correct');body.querySelectorAll('[data-answer]').forEach(b=>b.disabled=true);$('.feedback').textContent=session.attempted?'다시 생각해서 해냈어요! 멋져요. 🌈':'정답! 정말 잘했어요. ✨';$('#hint').hidden=true;$('#next').hidden=false;$('#next').focus();}else{session.attempted=true;btn.classList.add('wrong');btn.disabled=true;$('.feedback').textContent=`괜찮아요! 다시 해볼까요? ${q.hint}`;}}
+function finish(){const score=session.score;const title=session.id==='daily'?'오늘의 도전':games.find(g=>g.id===session.id).name;const id=session.id;saved.rounds++;saved.correct+=score;saved.answered+=5;saved.stars+=score;saved.history.unshift({title,score,date:new Date().toLocaleDateString('ko-KR')});saved.history=saved.history.slice(0,10);persist();session=null;show(`<div class="modal-icon">🌈</div><span class="kicker">참 잘했어요!</span><h2>또 한 뼘 자랐어요!</h2><p>5문제를 끝까지 풀었어요.<br>처음에 맞힌 문제는 <strong>${score}개</strong>예요.<br>다시 도전해서 맞힌 문제도 소중한 배움이에요.</p><p>이번에 모은 별 <strong>✦ ${score}</strong></p><button class="primary" id="again">한 번 더 도전 ↗</button><p class="storage-note">${storageOK?'기록은 이 브라우저에 저장했어요.':'브라우저에서 저장을 사용할 수 없어 이번 방문 동안만 기록을 볼 수 있어요.'}</p>`);$('#again').onclick=()=>start(id);}
+$('#daily').onclick=()=>start('daily');
+$('#record').onclick=()=>{show(`<div class="modal-icon">⭐</div><h2>차곡차곡 나의 기록</h2><div class="stat-row"><div><strong>${saved.rounds}</strong><span>완료한 게임</span></div><div><strong>${saved.stars}</strong><span>모은 별</span></div><div><strong>${saved.correct}/${saved.answered}</strong><span>처음에 맞힌 문제</span></div></div><p>${saved.rounds?'꾸준히 도전한 나를 칭찬해요!':'첫 번째 모험을 시작해 보세요!'}</p><div id="history"></div><p class="storage-note">이 기기와 브라우저의 기록이에요. 다른 기기와 공유되지 않아요.</p>`);const list=$('#history');saved.history.slice(0,5).forEach(h=>{const p=document.createElement('p');p.className='history';p.textContent=`${String(h.title)} · ${Number(h.score)} / 5 · ${String(h.date)}`;list.append(p);});};
+$('#teacher').onclick=()=>show('<div class="modal-icon">📚</div><h2>선생님과 함께하는 수학</h2><p>초등학교 2학년 개념을 연습하는 놀이 공간입니다.</p><div class="teacher-list">① 수업에서 배운 영역의 게임을 고릅니다.<br>② 5문제를 풀며 풀이 방법을 이야기합니다.<br>③ 틀린 문제는 힌트를 읽고 다시 도전합니다.<br>④ 나의 기록에서 처음에 맞힌 문제 수를 확인합니다.</div><p>세 자리 수 · 두 자리 수의 덧셈과 뺄셈 · 구구단<br>5분 단위 시각 읽기 · m와 cm · 수의 규칙</p><p class="storage-note">로그인이나 개인정보 입력이 필요하지 않습니다. 학급별 집계 기능은 없으며, 공용 기기에서는 기록을 함께 사용합니다.</p>');
+render();
+

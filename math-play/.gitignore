@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+node_modules/
+data/
+backups/
+test-results/
+*.log
+*.pem
+*.key
+*.p12
+*.pfx
