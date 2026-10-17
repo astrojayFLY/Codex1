@@ -2,7 +2,7 @@
 .env.*
 !.env.example
 node_modules/
-data/
+/data/
 backups/
 test-results/
 *.log

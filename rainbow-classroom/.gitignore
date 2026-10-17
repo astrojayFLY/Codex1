@@ -8,7 +8,7 @@ dist/
 test-results/
 playwright-report/
 
-data/
+/data/
 *.tsbuildinfo
 *.log
 *.pem
