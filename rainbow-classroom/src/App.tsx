@@ -1,3 +1,5 @@
+import { builtInPrograms, isVisible, type Visibility } from './lib/visibility';
+import { watchVisibility, setProgramVisibility } from './lib/firebase-backend';
 import DiaryPage from './DiaryPage';
 import DrawPage from './DrawPage';
 import { Component, useEffect, useRef, useState, type ReactNode, type FormEvent } from 'react';
@@ -42,7 +44,15 @@ function usePrograms() {
   useEffect(()=>{setStatus('loading');return watchPrograms(items=>{setPrograms(items);setStatus('ready');},()=>setStatus('error'));},[version]);
   return {programs,status,reload:()=>setVersion(v=>v+1)};
 }
+function useVisibility() {
+  const [settings, setSettings] = useState<Visibility>({});
+  const [status, setStatus] = useState<'loading'|'ready'|'error'>('loading');
+  const [version, setVersion] = useState(0);
+  useEffect(() => { setStatus('loading'); return watchVisibility(items => {setSettings(items); setStatus('ready');}, () => setStatus('error')); }, [version]);
+  return { settings, status, reload: () => setVersion(v => v + 1) };
+}
 function Home() {
+  const visibility = useVisibility();
   const date = useDaily();
   const today = virtues[dailyIndex(date, virtues.length)];
   const { programs, status, reload } = usePrograms();
@@ -50,13 +60,14 @@ function Home() {
     <section className="hero" aria-labelledby="hero-heading"><div className="hero-copy"><p className="eyebrow"><span className="tiny-spark" aria-hidden="true">✦</span> 선생님의 아이디어가 모이는 곳</p><h1 id="hero-heading">우리 교실의 하루에<br /><span>작은 무지개를.</span></h1><p className="hero-description">배움에 즐거움을, 마음에 따뜻함을.<br />수업에 필요한 작은 도구들을 한곳에서 만나 보세요.</p><Link className="button primary hero-cta" to="/virtue">오늘의 미덕 만나기 <RainbowTile /></Link><div className="hero-note"><span className="dot"/> 로그인 없이, 바로 함께할 수 있어요.</div></div>
       <div className="hero-visual" aria-hidden="true"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><span className="spark spark-one">✦</span><span className="spark spark-two">✧</span><div className="rainbow-float"><Rainbow large /></div><div className="floating-label label-one">마음이 자라는 시간 <span>♡</span></div><div className="floating-label label-two"><span className="dot"/> 오늘도, 함께 한 뼘</div><span className="visual-caption">A LITTLE KINDNESS, EVERY DAY</span></div>
     </section>
-    <section className="program-section" id="programs" aria-labelledby="program-heading"><div className="section-heading"><div><p className="eyebrow">OUR CLASSROOM TOOLS</p><h2 id="program-heading">우리 교실 프로그램<span className="count">{programs.length + 5}</span></h2></div><p>필요한 순간, 가볍게 꺼내 쓰세요.</p></div>
-      <div className="program-grid"><article className="featured-program"><div className="card-top"><span className="category">마음 성장</span><span className="card-number">01</span></div><div className="mini-scene" aria-hidden="true"><span className="scene-star">✦</span><Rainbow /><span className="scene-heart">♡</span><span className="scene-pill">오늘은 ‘{today.name}’</span></div><div className="program-body"><h3>오늘의 미덕</h3><p>하루 한 가지 미덕으로<br />마음이 자라는 교실을 만들어요.</p><Link className="card-action" to="/virtue">함께 시작하기 <span className="round-arrow"><Arrow /></span></Link></div></article>
-        <article className="external-program tint-0"><div className="card-top"><span className="category">문서 도구 · 로컬 처리</span><span className="card-number">02</span></div><div className="external-symbol" aria-hidden="true">Aa</div><div className="program-body"><h3>PDF 글자 수</h3><p>공백 포함·제외 글자 수를 바로 확인해요. 파일과 결과는 내 기기에서만 처리해요.</p><a className="card-action" href="/pdf-counter/index.html">PDF 선택하기 <span className="round-arrow"><Arrow /></span></a></div></article>
-        <article className="external-program tint-1"><div className="card-top"><span className="category">학급 운영 · 랜덤 뽑기</span><span className="card-number">03</span></div><div className="external-symbol" aria-hidden="true">✦</div><div className="program-body"><h3>빠른 뽑기</h3><p>1초 룰렛과 카드로 다음 주인공을 뽑아요. 명단 설정과 중복 제외도 간편하게.</p><Link className="card-action" to="/draw">바로 뽑기 <span className="round-arrow"><Arrow /></span></Link></div></article>
-        <article className="external-program tint-2"><div className="card-top"><span className="category">마음 기록 · 나만의 클라우드</span><span className="card-number">04</span></div><div className="external-symbol" aria-hidden="true">✎</div><div className="program-body"><h3>나의 하루 · 일기장</h3><p>오늘의 기분과 소중한 순간을 기록해요. Google 계정으로 로그인하면 나만 볼 수 있게 저장해요.</p><Link className="card-action" to="/diary">일기 쓰러 가기 <span className="round-arrow"><Arrow /></span></Link></div></article><article className="external-program tint-0"><div className="card-top"><span className="category">초등 2학년 · 수학 놀이</span><span className="card-number">05</span></div><div className="external-symbol" aria-hidden="true">2 + 3</div><div className="program-body"><h3>무지개 수학</h3><p>수와 연산, 구구단, 시각과 길이까지 즐거운 게임으로 함께 배워요.</p><a className="card-action" href="https://astrojayfly.github.io/Codex1/math-play/">수학 놀이 시작 <span className="round-arrow"><Arrow /></span></a></div></article>{programs.map((program, i) => <article className={`external-program tint-${i % 3}`} key={program.id}><div className="card-top"><span className="category">교실 도구</span><span className="card-number">{String(i + 6).padStart(2, '0')}</span></div><div className="external-symbol" aria-hidden="true">{['✳', '✦', '✿'][i % 3]}</div><div className="program-body"><h3>{program.title}</h3><p>{program.description}</p>{validUrl(program.url) ? <a className="card-action" href={program.url} target="_blank" rel="noopener noreferrer" aria-label={`${program.title} 새 탭에서 열기`}>프로그램 열기 <span className="round-arrow"><Arrow /></span></a> : <p className="error-text">주소를 확인 중이에요.</p>}</div></article>)}
-        {programs.length === 0 && status !== 'loading' && <div className="coming-card"><div className="outlined-plus" aria-hidden="true">+</div><h3>다음 아이디어가 <br />자랄 자리</h3><p>우리 교실에 필요한 도구들이<br />하나씩 더해질 거예요.</p><span className="coming-label">차근차근 준비하고 있어요</span></div>}
+    <section className="program-section" id="programs" aria-labelledby="program-heading"><div className="section-heading"><div><p className="eyebrow">OUR CLASSROOM TOOLS</p><h2 id="program-heading">우리 교실 프로그램<span className="count">{visibility.status !== 'ready' ? '…' : [...builtInPrograms, ...programs].filter(p => isVisible(visibility.settings, p.id)).length}</span></h2></div><p>필요한 순간, 가볍게 꺼내 쓰세요.</p></div>
+      <div className="program-grid" aria-busy={visibility.status === 'loading'} style={visibility.status !== 'ready' ? { visibility: 'hidden' } : undefined}><article hidden={!isVisible(visibility.settings, 'builtin-virtue')} className="featured-program"><div className="card-top"><span className="category">마음 성장</span><span className="card-number">01</span></div><div className="mini-scene" aria-hidden="true"><span className="scene-star">✦</span><Rainbow /><span className="scene-heart">♡</span><span className="scene-pill">오늘은 ‘{today.name}’</span></div><div className="program-body"><h3>오늘의 미덕</h3><p>하루 한 가지 미덕으로<br />마음이 자라는 교실을 만들어요.</p><Link className="card-action" to="/virtue">함께 시작하기 <span className="round-arrow"><Arrow /></span></Link></div></article>
+        <article hidden={!isVisible(visibility.settings, 'builtin-pdf')} className="external-program tint-0"><div className="card-top"><span className="category">문서 도구 · 로컬 처리</span><span className="card-number">02</span></div><div className="external-symbol" aria-hidden="true">Aa</div><div className="program-body"><h3>PDF 글자 수</h3><p>공백 포함·제외 글자 수를 바로 확인해요. 파일과 결과는 내 기기에서만 처리해요.</p><a className="card-action" href="/pdf-counter/index.html">PDF 선택하기 <span className="round-arrow"><Arrow /></span></a></div></article>
+        <article hidden={!isVisible(visibility.settings, 'builtin-draw')} className="external-program tint-1"><div className="card-top"><span className="category">학급 운영 · 랜덤 뽑기</span><span className="card-number">03</span></div><div className="external-symbol" aria-hidden="true">✦</div><div className="program-body"><h3>빠른 뽑기</h3><p>1초 룰렛과 카드로 다음 주인공을 뽑아요. 명단 설정과 중복 제외도 간편하게.</p><Link className="card-action" to="/draw">바로 뽑기 <span className="round-arrow"><Arrow /></span></Link></div></article>
+        <article hidden={!isVisible(visibility.settings, 'builtin-diary')} className="external-program tint-2"><div className="card-top"><span className="category">마음 기록 · 나만의 클라우드</span><span className="card-number">04</span></div><div className="external-symbol" aria-hidden="true">✎</div><div className="program-body"><h3>나의 하루 · 일기장</h3><p>오늘의 기분과 소중한 순간을 기록해요. Google 계정으로 로그인하면 나만 볼 수 있게 저장해요.</p><Link className="card-action" to="/diary">일기 쓰러 가기 <span className="round-arrow"><Arrow /></span></Link></div></article><article hidden={!isVisible(visibility.settings, 'builtin-math')} className="external-program tint-0"><div className="card-top"><span className="category">초등 2학년 · 수학 놀이</span><span className="card-number">05</span></div><div className="external-symbol" aria-hidden="true">2 + 3</div><div className="program-body"><h3>무지개 수학</h3><p>수와 연산, 구구단, 시각과 길이까지 즐거운 게임으로 함께 배워요.</p><a className="card-action" href="https://astrojayfly.github.io/Codex1/math-play/">수학 놀이 시작 <span className="round-arrow"><Arrow /></span></a></div></article>{programs.filter(p => isVisible(visibility.settings, p.id)).map((program, i) => <article className={`external-program tint-${i % 3}`} key={program.id}><div className="card-top"><span className="category">교실 도구</span><span className="card-number">{String(i + 6).padStart(2, '0')}</span></div><div className="external-symbol" aria-hidden="true">{['✳', '✦', '✿'][i % 3]}</div><div className="program-body"><h3>{program.title}</h3><p>{program.description}</p>{validUrl(program.url) ? <a className="card-action" href={program.url} target="_blank" rel="noopener noreferrer" aria-label={`${program.title} 새 탭에서 열기`}>프로그램 열기 <span className="round-arrow"><Arrow /></span></a> : <p className="error-text">주소를 확인 중이에요.</p>}</div></article>)}
+        {programs.length === 0 && visibility.status === 'ready' && status !== 'loading' && <div className="coming-card"><div className="outlined-plus" aria-hidden="true">+</div><h3>다음 아이디어가 <br />자랄 자리</h3><p>우리 교실에 필요한 도구들이<br />하나씩 더해질 거예요.</p><span className="coming-label">차근차근 준비하고 있어요</span></div>}
       </div>
+      {visibility.status === 'error' && <div role="alert" className="notice">표시 설정을 불러오지 못했어요.<button className="text-button" onClick={visibility.reload}>다시 시도</button></div>}
       {status === 'loading' && <p role="status" className="inline-note">프로그램 목록을 불러오고 있어요…</p>}
       {status === 'error' && <div role="alert" className="notice"><p>추가 프로그램을 불러오지 못했어요. 오늘의 미덕은 바로 사용할 수 있어요.</p><button className="text-button" onClick={reload}>다시 시도</button></div>}
     </section>
@@ -102,6 +113,9 @@ function SetupNotice() {
 }
 function AdminPage({ preview = false }: { preview?: boolean }) {
   const auth = useAdmin();
+  const visibility = useVisibility();
+  const [visibilityBusy, setVisibilityBusy] = useState<string | null>(null);
+  const [demoVisibility, setDemoVisibility] = useState<Visibility>({});
   const { programs: remote, status, reload } = usePrograms();
   const [demo, setDemo] = useState<Program[]>([]);
   const [editing, setEditing] = useState<Program | 'new' | null>(null);
@@ -121,6 +135,22 @@ function AdminPage({ preview = false }: { preview?: boolean }) {
   }, []);
   const programs = demoMode ? demo : remote;
   const canEdit = demoMode || (!!auth.user && auth.role === 'admin');
+  const displaySettings = demoMode ? demoVisibility : visibility.settings;
+  const pendingVisibility = useRef(false);
+  async function toggleVisibility(id: string) {
+    if (pendingVisibility.current) return;
+    pendingVisibility.current = true; setVisibilityBusy(id); setMessage('');
+    try {
+      const visible = !isVisible(displaySettings, id);
+      if (demoMode) setDemoVisibility(current => ({ ...current, [id]: visible }));
+      else await setProgramVisibility(id, visible);
+      setMessage(visible ? '초기 화면에 다시 표시했어요.' : '초기 화면에서 숨겼어요. 프로그램과 저장된 데이터는 유지돼요.');
+    } catch (error) { setMessage(friendlyError(error)); }
+    finally { pendingVisibility.current = false; setVisibilityBusy(null); }
+  }
+  function visibilityButton(id: string, title: string) {
+    return <button className="text-button" disabled={visibilityBusy !== null || (!demoMode && visibility.status !== 'ready')} aria-label={title + (isVisible(displaySettings,id) ? ' 숨기기' : ' 다시 표시')} onClick={() => toggleVisibility(id)}>{visibilityBusy === id ? '저장 중…' : isVisible(displaySettings,id) ? '숨기기' : '다시 표시'}</button>;
+  }
   async function login() {
     setLoginBusy(true);setMessage('');
     try {await loginGoogle();}catch(error){setMessage(friendlyError(error));}finally{setLoginBusy(false);}
@@ -145,9 +175,11 @@ function AdminPage({ preview = false }: { preview?: boolean }) {
     {message && <div className="notice" role="status">{message}</div>}
     {!configured && !demoMode ? <SetupNotice /> : !canEdit ? <div className="login-panel"><RainbowTile /><h2>{auth.authLoading || auth.role === 'checking' ? '로그인을 확인하고 있어요…' : auth.user ? '지정한 선생님 계정만 관리할 수 있어요.' : '선생님, 반가워요.'}</h2><p>{auth.user ? '관리자 계정인지 확인하고 필요하면 다른 Google 계정으로 로그인해 주세요.' : '공개 목록 수정은 지정한 Google 계정으로만 할 수 있어요.'}</p>{auth.role === 'error' && <div role="alert"><p>관리자 권한을 확인하지 못했어요.</p><button className="text-button" onClick={auth.retry}>권한 다시 확인</button></div>}{!auth.user && !auth.authLoading && <button className="button primary" disabled={loginBusy} onClick={login}>{loginBusy ? 'Google로 이동 중…' : 'Google 계정으로 로그인'} <RainbowTile /></button>}<Link className="text-button" to="/">로그인 없이 프로그램 보기 →</Link></div> : <>
       {demoMode && <div className="notice preview-notice"><strong>관리 화면 미리보기</strong><p>로그인 없이 동작을 살펴보는 개발용 화면이에요. 추가한 내용은 이 화면에서만 보이고 새로고침하면 사라집니다. 공개 허브에는 저장되지 않아요.</p></div>}
-      <div className="admin-list-heading"><h2>프로그램 관리 <span className="count">{programs.length + 5}</span></h2><button className="button primary" onClick={() => { setMessage(''); setEditing('new'); }}>프로그램 추가 <span aria-hidden="true">＋</span></button></div>
-      <div className="admin-list"><div className="admin-row builtin"><RainbowTile /><div className="admin-row-content"><h3>오늘의 미덕 <span className="small-badge">기본 프로그램</span></h3><p>미덕 설명과 실천 예시는 앱에 포함되어 있어요.</p></div><Link className="text-button" to="/virtue">열기 ↗</Link></div>
-        {programs.map(p => <div className="admin-row" key={p.id}><div className="program-icon" aria-hidden="true">✳</div><div className="admin-row-content"><h3>{p.title}</h3><p>{p.description}</p><span className="url-label">{p.url}</span></div><div className="row-actions"><button className="text-button" onClick={() => { setMessage(''); setEditing(p); }}>수정<span className="sr-only"> {p.title}</span></button><button className="text-button danger" onClick={() => setDeleting(p)}>삭제<span className="sr-only"> {p.title}</span></button></div></div>)}
+      <div className="admin-list-heading"><h2>프로그램 관리 <span className="count">{programs.length + builtInPrograms.length}</span></h2><button className="button primary" onClick={() => { setMessage(''); setEditing('new'); }}>프로그램 추가 <span aria-hidden="true">＋</span></button></div>
+      <p className="inline-note">숨기면 초기 화면의 바로가기만 사라져요. 프로그램과 기존 데이터는 유지됩니다.</p>
+      {!demoMode && visibility.status === 'error' && <div className="notice" role="alert">표시 설정을 불러오지 못했어요. <button className="text-button" onClick={visibility.reload}>다시 시도</button></div>}
+      <div className="admin-list">{builtInPrograms.map(p => <div className="admin-row builtin" key={p.id}><RainbowTile /><div className="admin-row-content"><h3>{p.title} <span className="small-badge">기본 프로그램</span> {!isVisible(displaySettings,p.id) && <span className="small-badge">숨김</span>}</h3><p>{p.description}</p></div><div className="row-actions">{visibilityButton(p.id,p.title)}<a className="text-button" href={p.url}>열기 ↗</a></div></div>)}
+        {programs.map(p => <div className="admin-row" key={p.id}><div className="program-icon" aria-hidden="true">✳</div><div className="admin-row-content"><h3>{p.title} {!isVisible(displaySettings,p.id) && <span className="small-badge">숨김</span>}</h3><p>{p.description}</p><span className="url-label">{p.url}</span></div><div className="row-actions">{visibilityButton(p.id,p.title)}<button className="text-button" onClick={() => { setMessage(''); setEditing(p); }}>수정<span className="sr-only"> {p.title}</span></button><button className="text-button danger" onClick={() => setDeleting(p)}>삭제<span className="sr-only"> {p.title}</span></button></div></div>)}
       </div>
       {programs.length === 0 && <p className="empty-hint">첫 번째 외부 프로그램을 추가해 보세요. 제목, 설명, 인터넷 주소만 있으면 돼요.</p>}
       {!demoMode && status === 'loading' && <p role="status">목록을 불러오고 있어요…</p>}{!demoMode && status === 'error' && <div className="notice" role="alert">목록을 불러오지 못했어요. <button className="text-button" onClick={reload}>다시 시도</button></div>}

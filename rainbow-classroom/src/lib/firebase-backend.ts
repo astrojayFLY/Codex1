@@ -4,6 +4,7 @@ import { collection, doc, getFirestore, limit, onSnapshot, orderBy, query, runTr
 import { useEffect, useState } from 'react';
 import firebaseConfig from '../firebase-config.json';
 import { cleanProgram, validateProgram, validUrl, type Program, type ProgramInput } from './programs';
+import type { Visibility } from './visibility';
 
 // Browser config is public. Firestore rules enforce authorization.
 const app = initializeApp(firebaseConfig);
@@ -25,6 +26,19 @@ export function useAccount() {
 export async function loginGoogle() { await authReady; const provider = new GoogleAuthProvider(); provider.setCustomParameters({prompt:'select_account'}); await signInWithPopup(auth, provider); }
 export async function logoutGoogle() { await signOut(auth); }
 export function watchAdmin(uid: string, next: (allowed: boolean) => void, fail: () => void) { return onSnapshot(doc(db,'admin_users',uid), snapshot => next(snapshot.exists() && snapshot.data().enabled === true), fail); }
+// Live listeners make teacher changes appear on already-open classroom screens.
+export function watchVisibility(next: (items: Visibility) => void, fail: () => void) {
+  return onSnapshot(query(collection(db, 'program_visibility'), limit(105)), snapshot => {
+    const items: Visibility = {};
+    for (const item of snapshot.docs) items[item.id] = item.data().visible !== false;
+    next(items);
+  }, fail);
+}
+export async function setProgramVisibility(id: string, visible: boolean) {
+  await runTransaction(db, async transaction => {
+    transaction.set(doc(db, 'program_visibility', id), { visible, updated_at: serverTimestamp() });
+  });
+}
 // Live snapshots keep already-open classroom and admin screens synchronized.
 export function watchPrograms(next: (items: Program[]) => void, fail: (error: unknown) => void) {
   return onSnapshot(query(collection(db,'programs'),orderBy('created_at'),limit(100)), snapshot => { try { next(snapshot.docs.map(item => { const data=item.data(); if(typeof data.title!=='string'||typeof data.description!=='string'||typeof data.url!=='string'||!validUrl(data.url))throw Error('INVALID_PROGRAM');return {id:item.id,title:data.title,description:data.description,url:data.url,created_at:data.created_at?.toDate?.().toISOString()??'',updated_at:data.updated_at?.toDate?.().toISOString()??''}; })); } catch(error) {fail(error);} }, fail);
@@ -36,13 +50,20 @@ export async function saveProgram(raw: ProgramInput, id?: string) {
   await runTransaction(db,async transaction => {
     const existing=await transaction.get(target);
     const original=id&&id!==newId?await transaction.get(doc(db,'programs',id)):existing;
+    const oldVisibility = id && id !== newId ? await transaction.get(doc(db,'program_visibility',id)) : null;
     if(existing.exists()&&id!==newId) throw {code:'duplicate-url'};
     if(id&&!original.exists()) throw {code:'not-found'};
     transaction.set(target,{...input,created_at:existing.exists()?existing.data()!.created_at:serverTimestamp(),updated_at:serverTimestamp()});
-    if(id&&id!==newId) transaction.delete(doc(db,'programs',id));
+    if(id&&id!==newId) {
+      transaction.delete(doc(db,'programs',id));
+      if (oldVisibility?.exists()) {
+        transaction.set(doc(db,'program_visibility',newId),{visible:oldVisibility.data().visible,updated_at:serverTimestamp()});
+        transaction.delete(doc(db,'program_visibility',id));
+      }
+    }
   });
 }
-export async function deleteProgram(id: string) { await runTransaction(db,async transaction=>{const ref=doc(db,'programs',id);if(!(await transaction.get(ref)).exists())throw {code:'not-found'};transaction.delete(ref);}); }
+export async function deleteProgram(id: string) { await runTransaction(db,async transaction=>{const ref=doc(db,'programs',id);if(!(await transaction.get(ref)).exists())throw {code:'not-found'};transaction.delete(ref);transaction.delete(doc(db,'program_visibility',id));}); }
 export function friendlyError(error: unknown) {
   const code=(error as {code?:string})?.code;
   if(code==='duplicate-url') return '같은 주소의 프로그램이 이미 있어요. 기존 항목을 수정해 주세요.';
