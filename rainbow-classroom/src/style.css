@@ -18,3 +18,5 @@
 @media(max-width:767px){.hero-visual{overflow:clip}}
 .hero:before{left:50%;right:auto;width:100vw;transform:translateX(-50%)}
 .card-number{color:#6a5b79}.site-footer{color:#6e6479}.virtue-intro .eyebrow{color:#79588d}.date-zone{color:#6b5b7b}.little-label{color:#70527e}.preview-link span{color:#6a5c76}
+[hidden] { display: none !important; }
+.row-actions { flex-wrap: wrap; justify-content: flex-end; }

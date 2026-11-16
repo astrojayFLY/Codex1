@@ -53,8 +53,23 @@ try{
  await ok(getDoc(doc(admin,'admin_users/teacher')));
  await no(getDoc(doc(alice,'admin_users/teacher')));
  await ok(deleteDoc(doc(admin,'programs/tool')));
+ const visibility=()=>({visible:false,updated_at:serverTimestamp()});
+ await ok(setDoc(doc(admin,'program_visibility/builtin-pdf'),visibility()));
+ await ok(getDoc(doc(anonymous,'program_visibility/builtin-pdf')));
+ await ok(getDocs(query(collection(anonymous,'program_visibility'),limit(105))));
+ await no(getDocs(collection(anonymous,'program_visibility')));
+ await no(getDocs(query(collection(anonymous,'program_visibility'),limit(106))));
+ await no(setDoc(doc(alice,'program_visibility/builtin-diary'),visibility()));
+ await no(setDoc(doc(anonymous,'program_visibility/builtin-diary'),visibility()));
+ await no(setDoc(doc(admin,'program_visibility/invalid'),visibility()));
+ await no(setDoc(doc(admin,'program_visibility/builtin-diary'),{...visibility(),visible:'false'}));
+ await no(setDoc(doc(admin,'program_visibility/builtin-diary'),{...visibility(),extra:'forbidden'}));
+ await no(updateDoc(doc(admin,'program_visibility/builtin-pdf'),{visible:1,updated_at:serverTimestamp()}));
+ await no(updateDoc(doc(admin,'program_visibility/builtin-pdf'),{updated_at:Timestamp.fromMillis(0)}));
+ await ok(updateDoc(doc(admin,'program_visibility/builtin-pdf'),{visible:true,updated_at:serverTimestamp()}));
  await environment.withSecurityRulesDisabled(async context=>{await updateDoc(doc(context.firestore(),'admin_users/teacher'),{enabled:false});});
  await no(setDoc(doc(admin,'programs/revoked'),program()));
+ await no(setDoc(doc(admin,'program_visibility/builtin-diary'),visibility()));
  await ok(deleteDoc(doc(alice,'users/alice/entries/one')));
  console.log(`PASS: ${count} Firestore access assertions (isolated emulator only)`);
 }finally{await environment.cleanup();}

@@ -5,6 +5,8 @@ rules_version = '2';
 // users/{uid}/entries/{id}: date(YYYY-MM-DD), title(1..100), content(1..30000),
 // mood(enum), createdAt(timestamp, immutable), updatedAt(timestamp).
 // Ownership is the immutable UID in the document path. No global diary access.
+// program_visibility/{builtin-ID or URL hash}: visible(bool), updated_at(timestamp).
+// Public presentation preferences; hiding a link is not access control.
 service cloud.firestore {
   match /databases/{database}/documents {
     function googleUser() {
@@ -33,6 +35,19 @@ service cloud.firestore {
         && data.content is string && data.content.size() > 0 && data.content.size() <= 30000
         && data.mood in ['행복','평온','보통','속상','피곤']
         && data.createdAt is timestamp && data.updatedAt == request.time;
+    }
+    function validVisibility(data) {
+      return data.keys().hasAll(['visible','updated_at'])
+        && data.keys().hasOnly(['visible','updated_at'])
+        && data.visible is bool && data.updated_at == request.time;
+    }
+    match /program_visibility/{id} {
+      allow get: if true;
+      allow list: if request.query.limit != null && request.query.limit <= 105;
+      allow create, update: if admin() && validVisibility(request.resource.data)
+        && (id in ['builtin-virtue','builtin-pdf','builtin-draw','builtin-diary','builtin-math']
+          || (id.matches('[a-f0-9]{64}') && existsAfter(/databases/$(database)/documents/programs/$(id))));
+      allow delete: if admin();
     }
     match /programs/{id} {
       // The classroom tool catalog is intentionally public, including the Pages hub.
