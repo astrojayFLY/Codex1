@@ -6,7 +6,7 @@
 
 열려 있는 초기 화면에 즉시 반영해야 하므로 기존 Firestore 실시간 리스너 방식을 유지합니다. 프로그램 목록의 내용은 여전히 공개 데이터이며, 숨김 설정은 기밀성을 제공하지 않습니다. 교실 도구 허브(GitHub Pages)는 별도의 화면이므로 이 설정의 대상에 포함하지 않습니다.
 
-검증: TypeScript/Vite 프로덕션 빌드 통과, Vitest 20개 통과. 기존 격리 Firestore 권한 테스트에 표시 설정의 관리자 쓰기, 익명 읽기, 일반 사용자 쓰기 거부, 잘못된 ID·필드·자료형·시각 거부, 관리자 해제 후 쓰기 거부 사례를 추가했습니다. 아직 Firestore 규칙 컴파일 및 에뮬레이터 실행, 실제 브라우저 저장·복구 검증과 배포는 완료되지 않았습니다.
+검증: TypeScript/Vite 프로덕션 빌드 통과, Vitest 20개 통과. 기존 격리 Firestore 권한 테스트에 표시 설정의 관리자 쓰기, 익명 읽기, 일반 사용자 쓰기 거부, 잘못된 ID·필드·자료형·시각 거부, 관리자 해제 후 쓰기 거부 사례를 추가했습니다. 2026-11-16: Firestore 규칙 컴파일과 격리 에뮬레이터 접근 검사 51개를 통과했습니다. Enterprise Native classroom-live(서울)로 규칙과 Hosting 배포를 완료했습니다. 실제 관리자·방문자 창에서 PDF/메모리게임 숨기기·새로고침 유지·실시간 복구를 확인했고 모두 표시 상태로 복원했습니다. 에뮬레이터는 Standard 엔진이므로 실제 Enterprise 배포 및 브라우저 동작도 별도로 확인했습니다.
 
 I've set up prototype Security Rules to keep the data in Firestore safe. They are designed to be secure for administrator-only visibility changes, bounded public preference reads, and strict boolean/timestamp validation. However, you should review and verify them before broadly sharing your app. If you'd like, I can help you harden these rules.
 
