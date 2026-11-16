@@ -24,7 +24,7 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) { return <span aria
 function RainbowTile() { return <span className="rainbow-tile"><Rainbow /></span>; }
 function Header() {
   return <header className="site-header"><Link className="brand" to="/" aria-label="무지개 교실 홈"><RainbowTile /><span>무지개 교실<span className="brand-sub">우리의 하루를, 더 다정하게</span></span></Link>
-    <nav aria-label="주 메뉴"><a href="https://astrojayfly.github.io/Codex1/">교실 도구 허브</a><NavLink to="/" end>프로그램</NavLink><NavLink to="/virtue">오늘의 미덕</NavLink><NavLink className="nav-admin" to="/admin" aria-label="선생님 공간"><span className="nav-admin-label">선생님 공간</span><span aria-hidden="true"> ↗</span></NavLink></nav></header>;
+    <nav aria-label="주 메뉴"><NavLink to="/virtue">오늘의 미덕</NavLink><NavLink className="nav-admin" to="/admin" aria-label="선생님 공간"><span className="nav-admin-label">선생님 공간</span><span aria-hidden="true"> ↗</span></NavLink></nav></header>;
 }
 function Footer() { return <footer className="site-footer"><Link to="/" className="footer-brand"><Rainbow /> 무지개 교실</Link><p>작은 도구로 만드는, 더 따뜻한 교실.</p><span>함께 배우고, 함께 자라요.</span></footer>; }
 function useDaily() {
@@ -88,7 +88,7 @@ function VirtuePage() {
     try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); }
     catch { setFullMessage('전체 화면을 열지 못했어요. 브라우저의 전체 화면 기능을 사용해 주세요.'); }
   }
-  return <main id="main" className="virtue-page"><div className="page-toolbar"><Link to="/" className="back-link">← 프로그램으로</Link><button className="text-button" onClick={fullscreen}>화면 크게 보기 <span aria-hidden="true">⛶</span></button></div>
+  return <main id="main" className="virtue-page"><div className="page-toolbar"><Link to="/" className="back-link">← 무지개 교실</Link><button className="text-button" onClick={fullscreen}>화면 크게 보기 <span aria-hidden="true">⛶</span></button></div>
     <div className="virtue-intro"><p className="eyebrow">마음이 자라는 작은 습관</p><h1>오늘의 미덕</h1><p className="date-chip"><span className="dot"/>{prettyDate(date)}<span className="date-zone"> · 한국 시간</span></p></div>
     <article className="virtue-card" aria-labelledby="virtue-name"><div className="virtue-main"><div className="virtue-kicker"><span className="category">{changed ? '함께 만나 보는 미덕' : '오늘 우리 마음에 심을 씨앗'}</span><span aria-hidden="true">✦</span></div><div className="virtue-title-line"><div><p className="little-label">작지만 소중한 마음</p><h2 id="virtue-name" key={virtue.id}>{virtue.name}</h2></div><div className="virtue-rainbow"><Rainbow large /></div></div><p className="virtue-definition">{virtue.description}</p></div>
       <div className="virtue-examples"><h3><span aria-hidden="true">✳</span> 이렇게 실천해요</h3><ol>{virtue.examples.map((example, i) => <li key={example}><span className="example-number" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span><span>{example}</span></li>)}</ol></div>
@@ -171,7 +171,7 @@ function AdminPage({ preview = false }: { preview?: boolean }) {
     else { await deleteProgram(id); reload(); }
     setDeleting(null); setMessage('프로그램을 삭제했어요.');
   }
-  return <main id="main" className="admin-page"><div className="page-toolbar"><Link to="/" className="back-link">← 공개 허브로</Link>{auth.user && <button className="text-button" onClick={logout}>로그아웃</button>}</div><div className="admin-heading"><p className="eyebrow">TEACHER'S SPACE</p><h1>선생님 공간</h1><p>교실에 필요한 프로그램을 하나씩 더해 보세요.</p></div>
+  return <main id="main" className="admin-page"><div className="page-toolbar"><Link to="/" className="back-link">← 무지개 교실</Link>{auth.user && <button className="text-button" onClick={logout}>로그아웃</button>}</div><div className="admin-heading"><p className="eyebrow">TEACHER'S SPACE</p><h1>선생님 공간</h1><p>교실에 필요한 프로그램을 하나씩 더해 보세요.</p></div>
     {message && <div className="notice" role="status">{message}</div>}
     {!configured && !demoMode ? <SetupNotice /> : !canEdit ? <div className="login-panel"><RainbowTile /><h2>{auth.authLoading || auth.role === 'checking' ? '로그인을 확인하고 있어요…' : auth.user ? '지정한 선생님 계정만 관리할 수 있어요.' : '선생님, 반가워요.'}</h2><p>{auth.user ? '관리자 계정인지 확인하고 필요하면 다른 Google 계정으로 로그인해 주세요.' : '공개 목록 수정은 지정한 Google 계정으로만 할 수 있어요.'}</p>{auth.role === 'error' && <div role="alert"><p>관리자 권한을 확인하지 못했어요.</p><button className="text-button" onClick={auth.retry}>권한 다시 확인</button></div>}{!auth.user && !auth.authLoading && <button className="button primary" disabled={loginBusy} onClick={login}>{loginBusy ? 'Google로 이동 중…' : 'Google 계정으로 로그인'} <RainbowTile /></button>}<Link className="text-button" to="/">로그인 없이 프로그램 보기 →</Link></div> : <>
       {demoMode && <div className="notice preview-notice"><strong>관리 화면 미리보기</strong><p>로그인 없이 동작을 살펴보는 개발용 화면이에요. 추가한 내용은 이 화면에서만 보이고 새로고침하면 사라집니다. 공개 허브에는 저장되지 않아요.</p></div>}

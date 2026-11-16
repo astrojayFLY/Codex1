@@ -49,7 +49,7 @@ export default function DrawPage() {
   const remaining = pool.length - (result && exclude && !excluded.includes(result) ? 1 : 0);
   async function fullscreen() { try { if(document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch {setMessage('브라우저의 전체 화면 기능을 사용해 주세요.');} }
   return <main id="main" className={`draw-page ${compact ? 'draw-compact' : ''}`}>
-    <div className="page-toolbar"><Link to="/" className="back-link">← 프로그램으로</Link><div><button className="text-button" onClick={fullscreen}>전체 화면</button> · <button className="text-button" disabled={busy} onClick={() => setCompact(!compact)}>{compact ? '펼치기' : '작게 접기'}</button></div></div>
+    <div className="page-toolbar"><Link to="/" className="back-link">← 무지개 교실</Link><div><button className="text-button" onClick={fullscreen}>전체 화면</button> · <button className="text-button" disabled={busy} onClick={() => setCompact(!compact)}>{compact ? '펼치기' : '작게 접기'}</button></div></div>
     <div className="draw-heading"><p className="eyebrow">QUICK PICK · 우리 반의 다음 주인공</p><h1>빠른 뽑기 <span>✦</span></h1><p>기다림은 짧게, 참여는 골고루. 1초면 충분해요.</p></div>
     <section className="draw-shell" aria-label="학생 뽑기">
       <div className="draw-top"><div className="draw-tabs" role="group" aria-label="뽑기 방식"><button aria-pressed={mode==='wheel'} disabled={busy} onClick={()=>{setMode('wheel');setCard(null);}}>룰렛</button><button aria-pressed={mode==='cards'} disabled={busy} onClick={()=>{setMode('cards');setCard(null);}}>카드</button></div><button className="text-button" disabled={busy} onClick={()=>{setDraft(roster.join('\n'));setEditing(true);setMessage('');}}>명단 설정 ↗</button></div>
