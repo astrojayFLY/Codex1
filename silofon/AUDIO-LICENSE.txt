@@ -1,0 +1,5 @@
+Versilian Studios LLC — Versilian Community Sample Library (VCSL)
+Instrument: Glockenspiel, medium strikes G4, C5, G5, C6, G6, C7
+License: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+Source: https://github.com/sgossner/VCSL/tree/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Idiophones/Struck%20Idiophones/Glockenspiel
+Alterations: onset trim, level adjustment and fade. Original stereo and 44.1 kHz sample rate preserved.

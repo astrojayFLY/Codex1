@@ -1,0 +1,60 @@
+:root{font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#221f43;background:#f5f3fc;--purple:#5029b5;--muted:#615c79;--line:#e4def2}*{box-sizing:border-box}body{margin:0}header{background:#251747;color:white;display:flex;align-items:center;justify-content:space-between;padding:13px max(calc((100vw - 1370px)/2),3vw)}.brand{font-weight:900;white-space:nowrap;font-size:clamp(16px,2vw,22px)}.brand span{display:inline-grid;place-items:center;background:#d8c1ff;color:#361773;border-radius:10px;width:35px;height:35px;margin-right:8px}header button{background:#413260;color:white}main{max-width:1440px;margin:auto;padding:20px clamp(12px,3vw,34px)}nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}button,input,select,textarea{font:inherit}button,select{border:1px solid transparent;border-radius:10px;padding:9px 13px;color:inherit;background:#eee9fa;font-weight:750}button{cursor:pointer}button:hover{filter:brightness(.94)}button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #8a5bff;outline-offset:3px}button[aria-pressed=true],button.primary{background:var(--purple);color:#fff}button:disabled{opacity:.5;cursor:default}.lesson,.score-panel,.editor{border-radius:23px;border:1px solid var(--line);background:#fff;box-shadow:0 5px 22px #3324580a;margin-bottom:14px;padding:clamp(13px,2vw,25px)}.intro,.section-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.eyebrow{font-weight:800;color:var(--purple);font-size:.86rem;letter-spacing:.02em}h1{font-size:clamp(29px,4vw,53px);letter-spacing:-.06em;margin:3px 0 5px;line-height:1.07}p{margin:5px 0;color:var(--muted)}.signal{min-width:165px;text-align:center;background:#f3edff;border-radius:16px;padding:8px 14px;color:#432288;display:grid;gap:2px}.signal span{font-size:.79rem}.signal strong{font-size:clamp(25px,3vw,40px);line-height:1.1}.controls{display:flex;align-items:center;flex-wrap:wrap;gap:9px 14px;margin:13px 0}.controls label{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.9rem}.controls [hidden]{display:none}input[type=range]{width:clamp(70px,12vw,160px)}input{accent-color:var(--purple)}output{min-width:45px}.keyboard{overflow:auto;padding:5px}.instrument{position:relative;min-width:635px;height:var(--instrument-height,clamp(150px,calc(100dvh - 340px),680px));border-radius:23px;background:linear-gradient(160deg,#e0d2c6,#bbaa9c);border:6px solid #a08b7d;box-shadow:inset 0 0 0 2px #f1e6dd;isolation:isolate}.bar{position:absolute;left:var(--x);height:var(--height);width:5.35%;top:var(--top);padding:4px 0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(100deg,#ffffff28,transparent 38%,#00000014),var(--color);box-shadow:0 4px 0 #0005,inset 0 0 0 1px #0003;border-radius:7px;transform:translateX(-50%);font-size:clamp(13px,1.8vw,25px);line-height:1.1;color:#19162e;touch-action:manipulation}.bar.natural{color:#fff;text-shadow:0 1px 4px #10121a,0 1px 2px #10121a}.bar.sharp{color:#fff;font-size:clamp(12px,1.4vw,18px)}.bar small{font-size:.55em;margin-top:3px}.bar.active{z-index:2;filter:brightness(1.18);outline:4px solid #fff;box-shadow:0 0 0 7px #4b239a,0 0 19px 8px #fff9}h2{margin:0;font-size:clamp(17px,2vw,24px)}.loop-controls{margin:0}.line-navigation{display:flex;align-items:center;gap:8px;white-space:nowrap}.score-panel{padding-top:15px}#score{margin-top:10px}.note .hit{fill:transparent}.note.active .hit{fill:#ffdc7b;stroke:#b27213;stroke-width:1}.note.active{color:#221345}.note text{user-select:none}.hint,footer{font-size:.83rem;color:var(--muted)}#notice{margin-top:9px}.score-nav{display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin-top:8px;font-size:.83rem}.score-nav button{padding:4px 10px}.editor summary{cursor:pointer;font-weight:800}.editor-content{margin-top:14px}.editor-content>label{font-weight:800}.editor textarea{display:block;width:100%;min-height:86px;border:1px solid #c8bcdf;border-radius:10px;padding:10px;margin-top:8px}.preview{max-width:100%;max-height:650px}.preview-frame{width:100%;height:65vh;border:1px solid var(--line)}@media(max-width:760px){.section-head{align-items:flex-start;flex-direction:column}.intro{align-items:flex-end}.signal{min-width:105px}}
+
+.song-picker{align-items:center}.song-picker label{font-weight:800}.song-picker select{min-width:min(255px,75vw);background:#fff;border-color:var(--line)}
+
+.signal[hidden]{display:none}.signal strong{font-size:clamp(44px,6vw,88px)}.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+
+.controls .metro-switch{position:relative;display:inline-grid;place-items:center;width:38px;height:38px;margin-right:-8px;border-radius:10px;background:#eee9fa;color:var(--purple);cursor:pointer}
+.metro-switch:has(input:checked){background:var(--purple);color:#fff}
+.metro-switch:has(input:focus-visible){outline:3px solid #8a5bff;outline-offset:3px}
+.metro-switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.metro-icon{width:17px;height:21px;background:currentColor;clip-path:polygon(36% 6%,65% 6%,100% 100%,0 100%);position:relative;pointer-events:none}
+.metro-icon::after{content:"";position:absolute;left:8px;bottom:5px;width:2px;height:10px;background:#aaa0c9;transform:rotate(24deg);transform-origin:bottom}
+
+.mallet{position:absolute;left:53.07%;top:88%;transform:translate(-50%,-50%);width:25px;height:25px;z-index:4;pointer-events:none}
+.mallet::before{content:"";position:absolute;inset:0;z-index:1;border-radius:50%;background:radial-gradient(circle at 32% 27%,#bcf3ff,#58bddd 75%);border:1px solid #247a9e}
+.mallet::after{content:"";position:absolute;left:12px;top:9px;width:71px;height:7px;border:1px solid #247a9e;border-radius:8px;background:linear-gradient(#a7e8f9,#63c2e0);transform:rotate(38deg);transform-origin:left center}
+
+.bar.upcoming{z-index:1}.bar.active.upcoming{z-index:2}.bar.upcoming::after{content:"";position:absolute;inset:-4px;border:4px dashed #0055ee;border-radius:10px;box-shadow:0 0 0 2px white,inset 0 0 0 1px white;pointer-events:none}.bar.active.upcoming::after{inset:3px;border-radius:6px}
+
+header{justify-content:flex-start;gap:8px 20px;flex-wrap:wrap;padding-block:9px}
+header .song-picker{margin:0;gap:8px}
+header .song-picker select{min-width:0;width:clamp(150px,23vw,255px);color:#221f43;padding-block:7px}
+#fullscreen{margin-left:auto;white-space:nowrap}
+main{padding-top:10px}
+.lesson{padding-block:12px;margin-bottom:8px}
+.intro{position:relative;min-height:42px}
+.intro h1{font-size:clamp(26px,3.3vw,45px);margin:0}
+.signal{position:absolute;right:0;top:0;z-index:5;min-width:90px}
+.lesson .controls{margin-block:8px}
+.score-panel{padding-block:8px}
+#score{margin-top:0}
+#notice:empty{display:none}
+
+.lesson .intro{justify-content:space-between;flex-wrap:wrap;column-gap:12px;row-gap:4px;margin-bottom:6px}
+.lesson .intro h1{font-size:clamp(25px,2.6vw,39px)}
+.lesson .intro .controls{justify-content:flex-end;flex:1 1 auto;gap:5px 9px;margin:0}
+.lesson .intro .controls button,.lesson .intro .controls select{padding-block:6px}
+.lesson .intro .speed input{width:clamp(65px,7vw,104px)}
+
+@media(max-width:760px){.lesson .intro .controls{flex-basis:100%;justify-content:flex-start}}
+
+.lesson .score-panel{margin:0;padding:1px 0 6px;border:0;border-radius:0;box-shadow:none}
+#score{overflow-x:auto}
+.staff{display:block;width:100%;min-width:var(--staff-min);height:clamp(96px,15vh,142px);color:#211a34}
+.staff-lines,.barline{fill:none;stroke:#504660;stroke-width:1}
+.barline.final{stroke-width:3}
+.staff-number{fill:#57416e;font-size:13px;font-weight:750}
+.staff-clef{fill:currentColor;font-family:"Segoe UI Symbol","Noto Music",serif;font-size:52px}
+.staff-meter{fill:currentColor;font-size:21px;font-weight:800;text-anchor:middle;font-family:serif}
+
+
+.lesson > .score-nav{justify-content:flex-end}
+
+.header-controls{margin-left:auto;display:flex;align-items:center;justify-content:flex-end;gap:8px;max-width:100%}
+.header-controls #fullscreen{margin-left:0}
+.header-controls #silent{flex:none}
+@media(max-width:540px){.header-controls{gap:5px}.header-controls .song-picker select{width:clamp(98px,31vw,160px)}.header-controls button{padding-inline:7px}}
+
+.instrument > .signal{inset:50% auto auto 50%;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 3px 12px #26134a33}

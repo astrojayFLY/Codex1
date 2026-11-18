@@ -1,8 +1,8 @@
-name: Deploy classroom hub and math to Pages
+name: Deploy classroom tools to Pages
 on:
   push:
     branches: [main]
-    paths: ['hub/**', 'math-play/**', 'scripts/build-pages.mjs', '.github/workflows/pages.yml']
+    paths: ['hub/**', 'math-play/**', 'silofon/**', 'scripts/build-pages.mjs', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>반짝반짝 실로폰 연습실</title>
+<link rel="stylesheet" href="style.css">
+<script defer src="songs.js"></script>
+<script defer src="book-songs.js"></script>
+<script defer src="recordings.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<header><div class="brand"><span aria-hidden="true">♫</span> 반짝반짝 실로폰 연습실</div>
+<div class="header-controls"><nav class="song-picker" aria-label="연습곡 선택"><label for="songs">연습곡</label> <select id="songs"></select></nav><button id="silent" type="button" aria-label="음소거" aria-pressed="false" title="음소거"><span aria-hidden="true">🔊</span></button><button id="fullscreen">⛶ 전체 화면</button></div></header>
+<main>
+<section class="lesson" aria-labelledby="title">
+<div class="intro"><div><h1 id="title"></h1></div>
+<div class="visually-hidden"><span id="state"></span><span id="cue"></span></div>
+<div class="controls">
+<button class="primary" id="play">▶ 연주 시작</button><button id="stop" aria-label="정지" title="정지">■</button>
+<label class="speed">속도 <input type="range" id="speed" min=".5" max="1.5" value="1" step=".05"><output id="rate">1.00×</output></label>
+<label class="metro-switch" title="메트로놈"><input type="checkbox" id="metro" aria-label="메트로놈"><span class="metro-icon" aria-hidden="true"></span></label>
+<label><select id="soundOctave" aria-label="재생 음높이"><option value="0">악보와 같게</option><option value="1" selected>한 옥타브 높게</option><option value="2">두 옥타브 높게</option></select></label>
+</div>
+</div>
+<div class="score-panel" role="region" aria-label="악보">
+<div id="score"></div>
+</div>
+<div class="keyboard"><div id="instrument" class="instrument" aria-label="27판 실로폰"><div class="signal" id="countDisplay" hidden><strong id="countNumber" aria-label="예비박"></strong></div><span class="mallet" id="mallet" aria-hidden="true"></span></div></div>
+<div class="score-nav">
+<div class="line-navigation"><button id="previousLine" aria-label="이전 악보 줄">‹</button><span id="lineCount"></span><button id="nextLine" aria-label="다음 악보 줄">›</button></div>
+<div class="controls loop-controls">
+<label>반복 <select id="loop"><option value="none">끄기</option><option value="line">한 줄</option><option value="measure">마디 구간</option></select></label>
+<label id="lineField" hidden>줄 <select id="line"></select></label>
+<label id="fromField" hidden>시작 마디 <select id="from"></select></label>
+<label id="toField" hidden>끝 마디 <select id="to"></select></label></div></div>
+<p id="notice" class="hint"></p>
+</section>
+<details class="editor">
+<summary>내 악보 입력 · MusicXML · PDF / 이미지</summary>
+<div class="editor-content">
+<div class="controls">
+<label>곡 제목 <input id="customTitle" type="text" maxlength="80" autocomplete="off" placeholder="내 악보"></label>
+<label><input id="keepSong" type="checkbox"> 연습곡 목록에 저장</label>
+</div>
+<label for="custom">계이름과 박자</label>
+<p class="hint">띄어쓰기로 음을, | 로 마디를 구분하세요. 도':0.5는 높은 도 반 박, 솔#:1은 올림 솔 한 박, 쉼:2는 두 박입니다. 솔,·라,·시,는 낮은 음입니다.</p>
+<textarea id="custom" spellcheck="false">도 레 미 파 | 솔 솔 도':2 | 도' 시 라 솔 | 파 미 레 도</textarea>
+<div class="controls"><label>박자 <select id="meter"><option>4</option><option>3</option><option>2</option></select>/4</label><button id="apply">이 악보로 연습</button><button id="download">텍스트 저장</button></div>
+<p id="editStatus" role="status"></p>
+<label for="upload">악보 파일</label>
+<input id="upload" type="file" accept=".musicxml,.xml,.pdf,image/*,.txt">
+<p class="hint">단선율 MusicXML을 연주할 수 있어요. PDF와 이미지는 참고용으로 표시합니다.</p>
+<p id="uploadStatus" role="status"></p><div id="previewArea"></div>
+</div>
+</details>
+<footer><span id="audioCredit">실로폰 소리 · 실제 글로켄슈필 녹음</span> · <a href="AUDIO-LICENSE.txt">음원 출처와 라이선스</a></footer>
+</main>
+</body></html>
